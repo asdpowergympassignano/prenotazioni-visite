@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground:      #f7f4ef;
+    --surface:     #ffffff;
+    --surface-2:   #efeae2;
+    --line:        #e2dbd1;
+    --line-forte:  #c9c0b3;
+    --ink:         #1b1916;
+    --ink-2:       #6d665b;
+    --accent:      #d24d17;
+    --accent-soft: #fbeade;
+    --flippers:    #1c6dc9;
+    --flippers-soft: #e7effa;
+    --ok:          #1c6b43;
+    --ok-soft:     #e7f2ec;
+    --ok-line:     #b9d8c7;
+    --warn:        #9c5c07;
+    --warn-soft:   #faf0dc;
+    --su-ombra:    0 1px 2px rgba(40,30,18,.06), 0 6px 18px rgba(40,30,18,.05);
+
+    --f-display: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+    --f-testo:   'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+    --f-dati:    'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+
+    --r-s: 8px;
+    --r-m: 12px;
+    --r-l: 18px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:      #191713;
+      --surface:     #221f1a;
+      --surface-2:   #2c2823;
+      --line:        #383229;
+      --line-forte:  #524939;
+      --ink:         #f3efe8;
+      --ink-2:       #a79d8e;
+      --accent:      #ff7440;
+      --accent-soft: #33200f;
+      --flippers:    #6aabf5;
+      --flippers-soft: #14243a;
+      --ok:          #5cbc8c;
+      --ok-soft:     #15281e;
+      --ok-line:     #2c4d3a;
+      --warn:        #dda54a;
+      --warn-soft:   #2c2313;
+      --su-ombra:    0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.22);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-testo);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .guscio {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0 16px 56px;
+  }
+
+  button { font: inherit; color: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  /* ── Intestazione ─────────────────────────────────────── */
+
+  .testata {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 22px 0 18px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+  }
+
+  .titolo {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: -.015em;
+    line-height: 1.15;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .sottotitolo {
+    color: var(--ink-2);
+    font-size: .82rem;
+    margin-top: 5px;
+  }
+
+  .sottotitolo b {
+    font-family: var(--f-dati);
+    font-weight: 500;
+    font-size: .8rem;
+    color: var(--ink);
+  }
+
+  .chip {
+    flex-shrink: 0;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: .64rem;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+
+  .chip--powergym          { color: var(--accent); }
+  .chip--trasimenoflippers { color: var(--flippers); }
+  .chip--staff             { color: var(--ink-2); }
+
+  /* ── Loghi delle società ──────────────────────────────── */
+
+  /* Piatto bianco sotto il logo: i marchi sono disegnati per fondo chiaro
+     e così restano leggibili anche in tema scuro. */
+  .stemma {
+    display: block;
+    background: #fff;
+    border-radius: 6px;
+    padding: 3px;
+    object-fit: contain;
+  }
+
+  .loghi {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .loghi .stemma { height: 38px; width: auto; max-width: 104px; }
+
+  /* ── Elementi ricorrenti ──────────────────────────────── */
+
+  .etichetta {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .pila { display: flex; flex-direction: column; gap: 10px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid transparent;
+    border-radius: var(--r-m);
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: filter .15s;
+  }
+  .btn:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  .btn--fantasma {
+    background: transparent;
+    border-color: var(--line-forte);
+    color: var(--ink);
+  }
+  .btn--pericolo { background: transparent; border-color: var(--line-forte); color: #c0392b; }
+  @media (prefers-color-scheme: dark) { .btn--pericolo { color: #ff8a7a; } }
+
+  .btn--piccolo { width: auto; padding: 8px 12px; font-size: .82rem; border-radius: var(--r-s); }
+
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fila > .btn { flex: 1 1 0; }
+
+  /* ── Elenco date ──────────────────────────────────────── */
+
+  .data-riga {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 4px 14px;
+    width: 100%;
+    text-align: left;
+    padding: 15px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    box-shadow: var(--su-ombra);
+    cursor: pointer;
+  }
+  .data-riga:hover { border-color: var(--line-forte); }
+
+  .data-giorno {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: 1.02rem;
+    letter-spacing: -.01em;
+  }
+  /* In italiano va maiuscola solo l'iniziale: "lunedì 14 settembre". */
+  .data-giorno::first-letter,
+  .barra-giorno h2::first-letter,
+  .foglio-data::first-letter { text-transform: uppercase; }
+
+  .data-conta {
+    font-family: var(--f-dati);
+    font-weight: 600;
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ok);
+  }
+  .data-conta.esaurito { color: var(--ink-2); }
+
+  .misura {
+    grid-column: 1 / -1;
+    height: 4px;
+    margin-top: 9px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .misura i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .62rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: var(--r-s);
+    margin-left: 8px;
+    vertical-align: 2px;
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+
+  /* ── Griglia slot ─────────────────────────────────────── */
+
+  .griglia {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9px;
+  }
+
+  .slot {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 13px;
+    border-radius: var(--r-m);
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    cursor: default;
+    min-height: 78px;
+  }
+
+  .slot-ora {
+    font-family: var(--f-dati);
+    font-weight: 600;
+    font-size: 1.02rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+  }
+
+  .slot-stato {
+    font-size: .76rem;
+    color: var(--ink-2);
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+  }
+
+  .slot-tel {
+    font-family: var(--f-dati);
+    font-size: .72rem;
+    color: var(--ink-2);
+    margin-top: 2px;
+  }
+
+  .slot--libero {
+    background: var(--ok-soft);
+    border-color: var(--ok-line);
+    cursor: pointer;
+  }
+  .slot--libero .slot-stato { color: var(--ok); font-weight: 500; }
+  .slot--libero:hover { border-color: var(--ok); }
+
+  .slot--mio {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    cursor: pointer;
+  }
+  .slot--mio .slot-stato { color: var(--accent); font-weight: 600; }
+
+  .slot--preso.slot--admin { cursor: pointer; background: var(--surface); }
+  .slot--preso.slot--admin:hover { border-color: var(--line-forte); }
+
+  .slot--fuori { opacity: .45; }
+
+  .punto {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: 1px;
+  }
+  .punto--powergym          { background: var(--accent); }
+  .punto--trasimenoflippers { background: var(--flippers); }
+
+  /* ── Barra di ritorno / azioni ────────────────────────── */
+
+  .indietro {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 0;
+    padding: 4px 0;
+    margin-bottom: 12px;
+    color: var(--ink-2);
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .indietro:hover { color: var(--ink); }
+
+  .barra-giorno {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .barra-giorno h2 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -.015em;
+    margin: 0;
+  }
+
+  .riepilogo {
+    color: var(--ink-2);
+    font-size: .82rem;
+    margin: 0 0 16px;
+  }
+
+  /* ── Avvisi ───────────────────────────────────────────── */
+
+  .avviso {
+    padding: 12px 14px;
+    border-radius: var(--r-m);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: .85rem;
+    margin-bottom: 14px;
+  }
+  .avviso--chiuso { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+
+  .vuoto {
+    text-align: center;
+    color: var(--ink-2);
+    font-size: .9rem;
+    padding: 44px 16px;
+    border: 1px dashed var(--line-forte);
+    border-radius: var(--r-l);
+  }
+
+  /* ── Foglio modale ────────────────────────────────────── */
+
+  .velo {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,14,6,.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 60;
+    padding: 0;
+  }
+
+  .foglio {
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--ground);
+    border-radius: var(--r-l) var(--r-l) 0 0;
+    border-top: 3px solid var(--accent);
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .foglio h3 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 0 0 2px;
+  }
+
+  .foglio-ora {
+    font-family: var(--f-dati);
+    font-weight: 600;
+    font-size: 1.6rem;
+    letter-spacing: -.02em;
+    margin: 0;
+  }
+
+  .foglio-data {
+    color: var(--ink-2);
+    font-size: .85rem;
+    margin: 0 0 18px;
+  }
+
+  .campo { margin-bottom: 12px; }
+  .campo label {
+    display: block;
+    margin-bottom: 5px;
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .campo input, .campo select {
+    width: 100%;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 16px; /* evita lo zoom automatico su iPhone */
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-forte);
+    border-radius: var(--r-m);
+  }
+  .campo input:focus, .campo select:focus { border-color: var(--accent); outline: none; }
+
+  .nota {
+    font-size: .74rem;
+    color: var(--ink-2);
+    margin: 14px 0 16px;
+  }
+
+  /* Scelta della società: due pulsanti, non un menù a tendina */
+  .scelta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .scelta button {
+    padding: 14px 10px;
+    border: 1px solid var(--line-forte);
+    border-radius: var(--r-m);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .88rem;
+    cursor: pointer;
+  }
+  .scelta button .stemma { height: 34px; width: auto; max-width: 88px; margin: 0 auto 8px; }
+  .scelta button[aria-pressed="true"] { box-shadow: inset 0 0 0 1px currentColor; }
+  .scelta button.pg[aria-pressed="true"] { color: var(--accent);   border-color: var(--accent);   background: var(--accent-soft); }
+  .scelta button.tf[aria-pressed="true"] { color: var(--flippers); border-color: var(--flippers); background: var(--flippers-soft); }
+
+  /* Ripartizione per società, area staff */
+  .ripartizione {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: -8px 0 16px;
+    font-family: var(--f-dati);
+    font-size: .78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  .ripartizione b { color: var(--ink); font-weight: 600; }
+
+  .conta-mini {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin-top: 7px;
+    font-family: var(--f-dati);
+    font-size: .72rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  .conta-mini b { color: var(--ink); font-weight: 600; }
+
+  .gruppo {
+    margin: 18px 0 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .gruppo .etichetta { letter-spacing: .09em; }
+  .gruppo span.n { font-family: var(--f-dati); font-size: .78rem; color: var(--ink-2); }
+
+  .codice {
+    font-family: var(--f-dati);
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: .18em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 12px;
+    border-radius: var(--r-m);
+    text-align: center;
+    margin: 14px 0;
+  }
+
+  /* ── Tabella elenco staff ─────────────────────────────── */
+
+  .tab-scroll { overflow-x: auto; margin: 4px 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: .66rem;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  td.num { font-family: var(--f-dati); font-variant-numeric: tabular-nums; }
+
+  /* ── QR ───────────────────────────────────────────────── */
+
+  .qr-blocco {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    padding: 16px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .qr-tela {
+    display: inline-block;
+    background: #fff;
+    padding: 10px;
+    border-radius: var(--r-s);
+    line-height: 0;
+    margin: 12px 0 10px;
+  }
+  .qr-url {
+    font-family: var(--f-dati);
+    font-size: .68rem;
+    color: var(--ink-2);
+    word-break: break-all;
+    text-align: left;
+  }
+
+  /* ── Piè di pagina ────────────────────────────────────── */
+
+  .pieno-pagina {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: .78rem;
+    color: var(--ink-2);
+  }
+  .link-staff {
+    background: none;
+    border: 0;
+    padding: 4px;
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    font-size: .78rem;
+  }
+
+  /* ── Toast ────────────────────────────────────────────── */
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 12px);
+    max-width: min(420px, calc(100vw - 32px));
+    background: var(--ink);
+    color: var(--ground);
+    padding: 11px 16px;
+    border-radius: var(--r-m);
+    font-size: .85rem;
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s, transform .18s;
+  }
+  .toast.visibile { opacity: 1; transform: translate(-50%, 0); }
+
+  .caricamento {
+    color: var(--ink-2);
+    font-size: .88rem;
+    padding: 40px 0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="guscio">
+  <header class="testata">
+    <div>
+      <h1 class="titolo">Visita Medica Sportiva</h1>
+      <div class="sottotitolo" id="sottotitolo">Scegli il tuo orario</div>
+    </div>
+    <span class="chip" id="chip" hidden></span>
+  </header>
+
+  <main id="app">
+    <div class="caricamento">Carico le date…</div>
+  </main>
+
+  <footer class="pieno-pagina" id="pie" hidden>
+    <span id="pie-testo">Prenotazioni</span>
+    <button class="link-staff" id="btn-staff">Area staff</button>
+  </footer>
+</div>
+
+<div id="modale"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* Valori iniettati dal server: il canale è già validato contro la configurazione. */
+var API        = "https://script.google.com/macros/s/AKfycbzlKzQZkEeAdE0oAvrxFU99DLVyyevIMJjKO2AWSFZbYuBO7rn8qp4Nf8nlc88UsGZpOA/exec";
+var CANALE_URL = new URLSearchParams(location.search).get('c') || '';
+var BASE_URL   = location.origin + location.pathname;
+var CANALI     = {};   /* arrivano con la prima risposta */
+var LOGHI      = {};
+
+var S = {
+  pin: sessionStorage.getItem('pin') || '',
+  admin: false,
+  canale: CANALE_URL || localStorage.getItem('canale') || '',
+  avvio: null,
+  giorno: null,
+  slot: null
+};
+
+/* ── Ponte verso Apps Script ──────────────────────────── */
+
+var AZIONI = {
+  apiAvvio: 'avvio', apiSlot: 'slot', apiPrenota: 'prenota', apiAnnulla: 'annulla',
+  apiSposta: 'sposta', apiNuovaData: 'nuovaData', apiStatoData: 'statoData',
+  apiEliminaData: 'eliminaData', apiElenco: 'elenco'
+};
+
+/* Il tipo text/plain e voluto: con application/json il browser manderebbe prima
+   una richiesta di controllo che Apps Script non sa gestire. Nome, cognome e
+   telefono viaggiano nel corpo, mai nell'indirizzo. */
+function chiama(nome, arg) {
+  return fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ azione: AZIONI[nome], dati: arg || {} })
+  }).then(function (r) {
+    if (!r.ok) throw new Error('Risposta ' + r.status);
+    return r.json();
+  });
+}
+
+function conPin(arg) {
+  var a = arg || {};
+  if (S.pin) a.pin = S.pin;
+  return a;
+}
+
+/* ── Memoria locale delle proprie prenotazioni ────────── */
+
+function chiaveMia(data, ora) { return 'mia:' + data + ':' + ora; }
+function salvaMia(data, ora, codice) { try { localStorage.setItem(chiaveMia(data, ora), codice); } catch (e) {} }
+function leggiMia(data, ora) { try { return localStorage.getItem(chiaveMia(data, ora)); } catch (e) { return null; } }
+function scordaMia(data, ora) { try { localStorage.removeItem(chiaveMia(data, ora)); } catch (e) {} }
+
+/* ── Aiuti DOM ────────────────────────────────────────── */
+
+function el(tag, classe, testo) {
+  var n = document.createElement(tag);
+  if (classe) n.className = classe;
+  if (testo != null) n.textContent = testo;
+  return n;
+}
+
+function svuota(n) { while (n.firstChild) n.removeChild(n.firstChild); return n; }
+
+/** Logo di una società, se configurato. Altrimenti null e resta il nome scritto. */
+function stemma(canale, alt) {
+  var src = LOGHI && LOGHI[canale];
+  if (!src) return null;
+  var img = el('img', 'stemma');
+  img.src = src;
+  img.alt = alt || CANALI[canale] || '';
+  img.onerror = function () { img.remove(); };
+  return img;
+}
+
+function etichettaData(iso) {
+  var d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+var timerToast;
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visibile');
+  clearTimeout(timerToast);
+  timerToast = setTimeout(function () { t.classList.remove('visibile'); }, 2600);
+}
+
+/* ── Modale ───────────────────────────────────────────── */
+
+function apriFoglio(costruisci) {
+  var velo = el('div', 'velo');
+  var foglio = el('div', 'foglio');
+  velo.appendChild(foglio);
+  velo.addEventListener('click', function (e) { if (e.target === velo) chiudiFoglio(); });
+  costruisci(foglio);
+  svuota(document.getElementById('modale')).appendChild(velo);
+  document.body.style.overflow = 'hidden';
+  var primo = foglio.querySelector('input, button');
+  if (primo) primo.focus();
+}
+
+function chiudiFoglio() {
+  svuota(document.getElementById('modale'));
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') chiudiFoglio();
+});
+
+/* ── Avvio ────────────────────────────────────────────── */
+
+function avvia() {
+  chiama('apiAvvio', conPin()).then(function (r) {
+    S.avvio = r;
+    S.admin = !!r.admin;
+    if (r.canali) CANALI = r.canali;
+    if (r.loghi) LOGHI = r.loghi;
+    if (!S.admin && S.pin) { S.pin = ''; sessionStorage.removeItem('pin'); }
+    aggiornaTestata();
+    if (S.giorno) apriGiorno(S.giorno); else mostraDate();
+    document.getElementById('pie').hidden = false;
+  }).catch(function (e) {
+    svuota(document.getElementById('app')).appendChild(
+      el('div', 'vuoto', 'Non riesco a caricare le date. Controlla la connessione e ricarica la pagina.')
+    );
+  });
+}
+
+function aggiornaTestata() {
+  var chip = document.getElementById('chip');
+  var sub = document.getElementById('sottotitolo');
+  var a = S.avvio;
+
+  svuota(chip);
+  if (S.admin) {
+    chip.className = 'chip chip--staff';
+    chip.appendChild(document.createTextNode('Staff'));
+    chip.hidden = false;
+  } else if (S.canale && CANALI[S.canale]) {
+    chip.className = 'chip chip--' + S.canale;
+    chip.appendChild(document.createTextNode(CANALI[S.canale]));
+    chip.hidden = false;
+  } else {
+    chip.hidden = true;
+  }
+
+  /* Riga dei loghi in testata: c'è solo se almeno un logo è configurato. */
+  var vecchia = document.getElementById('loghi');
+  if (vecchia) vecchia.remove();
+  var riga = el('div', 'loghi');
+  riga.id = 'loghi';
+  Object.keys(CANALI).forEach(function (k) {
+    var m = stemma(k);
+    if (m) riga.appendChild(m);
+  });
+  if (riga.children.length) sub.parentNode.appendChild(riga);
+
+  svuota(sub);
+  sub.appendChild(document.createTextNode('Lunedì '));
+  sub.appendChild(el('b', null, a.oraInizio + '–' + a.oraFine));
+  sub.appendChild(document.createTextNode(' · visite da ' + a.durata + ' minuti'));
+
+  document.getElementById('btn-staff').textContent = S.admin ? 'Esci dall’area staff' : 'Area staff';
+  document.getElementById('pie-testo').textContent = S.admin ? 'Modalità staff attiva' : 'Prenotazioni';
+}
+
+/* ── Vista: elenco date ───────────────────────────────── */
+
+function mostraDate() {
+  S.giorno = null;
+  var app = svuota(document.getElementById('app'));
+
+  if (S.admin) {
+    var nuova = el('button', 'btn', '+ Nuova data di visita');
+    nuova.style.marginBottom = '16px';
+    nuova.onclick = foglioNuovaData;
+    app.appendChild(nuova);
+
+    var strumenti = el('div', 'fila');
+    strumenti.style.marginBottom = '18px';
+
+    var bQr = el('button', 'btn btn--fantasma btn--piccolo', 'Link e QR per i canali');
+    bQr.onclick = foglioQR;
+    strumenti.appendChild(bQr);
+
+    if (S.avvio.urlFoglio) {
+      var bFoglio = el('a', 'btn btn--fantasma btn--piccolo', 'Apri il foglio dati');
+      bFoglio.href = S.avvio.urlFoglio;
+      bFoglio.target = '_blank';
+      bFoglio.rel = 'noopener';
+      bFoglio.style.textDecoration = 'none';
+      strumenti.appendChild(bFoglio);
+    }
+    app.appendChild(strumenti);
+  }
+
+  if (!S.avvio.date.length) {
+    app.appendChild(el('div', 'vuoto', S.admin
+      ? 'Nessuna data in calendario. Aggiungine una qui sopra.'
+      : 'Al momento non ci sono date aperte. Riprova tra qualche giorno.'));
+    return;
+  }
+
+  var pila = el('div', 'pila');
+  S.avvio.date.forEach(function (d) { pila.appendChild(rigaData(d)); });
+  app.appendChild(pila);
+}
+
+function rigaData(d) {
+  var liberi = Math.max(0, d.totale - d.occupati);
+  var riga = el('button', 'data-riga');
+  riga.type = 'button';
+
+  var sx = el('div');
+  var titolo = el('div', 'data-giorno');
+  titolo.appendChild(document.createTextNode(etichettaData(d.data)));
+  if (d.stato === 'chiusa') titolo.appendChild(el('span', 'tag', 'Chiusa'));
+  else if (d.passata) titolo.appendChild(el('span', 'tag', 'Passata'));
+  sx.appendChild(titolo);
+  riga.appendChild(sx);
+
+  var conta = el('div', 'data-conta' + (liberi === 0 ? ' esaurito' : ''),
+    liberi === 0 ? 'Al completo' : liberi + ' liber' + (liberi === 1 ? 'o' : 'i'));
+  riga.appendChild(conta);
+
+  var misura = el('div', 'misura');
+  var barra = el('i');
+  barra.style.width = (d.totale ? Math.round(d.occupati / d.totale * 100) : 0) + '%';
+  misura.appendChild(barra);
+  riga.appendChild(misura);
+
+  if (S.admin && d.perCanale) riga.appendChild(rigaRipartizione(d.perCanale, 'conta-mini'));
+
+  riga.onclick = function () { apriGiorno(d.data); };
+  return riga;
+}
+
+/** "PowerGym 4 · TrasimenoFlippers 2" — solo per lo staff. */
+function rigaRipartizione(perCanale, classe) {
+  var box = el('div', classe || 'ripartizione');
+  Object.keys(CANALI).forEach(function (k) {
+    var n = perCanale[k] || 0;
+    var pezzo = el('span');
+    pezzo.appendChild(el('span', 'punto punto--' + k));
+    pezzo.appendChild(document.createTextNode(CANALI[k] + ' '));
+    pezzo.appendChild(el('b', null, String(n)));
+    box.appendChild(pezzo);
+  });
+  return box;
+}
+
+/* ── Vista: slot del giorno ───────────────────────────── */
+
+function apriGiorno(data) {
+  S.giorno = data;
+  var app = svuota(document.getElementById('app'));
+  app.appendChild(el('div', 'caricamento', 'Carico gli orari…'));
+
+  chiama('apiSlot', conPin({ data: data })).then(function (r) {
+    if (!r.ok) { toast(r.errore); mostraDate(); return; }
+    S.slot = r;
+    disegnaGiorno(r);
+  }).catch(function () {
+    toast('Connessione persa. Riprova.');
+    mostraDate();
+  });
+}
+
+function disegnaGiorno(r) {
+  var app = svuota(document.getElementById('app'));
+
+  var back = el('button', 'indietro', '← Tutte le date');
+  back.type = 'button';
+  back.onclick = function () { avvia(); };
+  app.appendChild(back);
+
+  var barra = el('div', 'barra-giorno');
+  barra.appendChild(el('h2', null, etichettaData(r.data)));
+  app.appendChild(barra);
+
+  var liberi = r.slot.filter(function (s) { return !s.occupato && !s.passato; }).length;
+  app.appendChild(el('p', 'riepilogo',
+    liberi + ' orar' + (liberi === 1 ? 'io libero' : 'i liberi') + ' su ' + r.slot.length));
+
+  if (S.admin && r.perCanale) app.appendChild(rigaRipartizione(r.perCanale));
+
+  if (r.chiusa) {
+    app.appendChild(el('div', 'avviso avviso--chiuso',
+      r.stato === 'chiusa'
+        ? 'Le prenotazioni per questa data sono chiuse.'
+        : 'Questa data è già passata.'));
+  }
+
+  if (S.admin) app.appendChild(azioniStaff(r));
+
+  var griglia = el('div', 'griglia');
+  r.slot.forEach(function (s) { griglia.appendChild(cellaSlot(r, s)); });
+  app.appendChild(griglia);
+}
+
+function cellaSlot(r, s) {
+  var mio = !s.occupato ? null : leggiMia(r.data, s.ora);
+  var cella = el('button', 'slot');
+  cella.type = 'button';
+
+  var stato, cliccabile = false;
+
+  if (s.occupato && S.admin) {
+    cella.className += ' slot--preso slot--admin';
+    stato = (s.nome + ' ' + s.cognome).trim() || 'Occupato';
+    cliccabile = true;
+  } else if (mio) {
+    cella.className += ' slot--mio';
+    stato = 'La tua prenotazione';
+    cliccabile = true;
+  } else if (s.occupato) {
+    cella.className += ' slot--preso';
+    stato = 'Occupato';
+  } else if (s.passato || r.chiusa) {
+    cella.className += ' slot--fuori';
+    stato = s.passato ? 'Orario passato' : 'Non prenotabile';
+  } else {
+    cella.className += ' slot--libero';
+    stato = 'Libero';
+    cliccabile = true;
+  }
+
+  cella.appendChild(el('div', 'slot-ora', s.ora));
+
+  var rigaStato = el('div', 'slot-stato');
+  if (s.occupato && s.canale && CANALI[s.canale]) {
+    rigaStato.appendChild(el('span', 'punto punto--' + s.canale));
+  }
+  rigaStato.appendChild(document.createTextNode(stato));
+  cella.appendChild(rigaStato);
+
+  if (S.admin && s.telefono) cella.appendChild(el('div', 'slot-tel', s.telefono));
+
+  if (!cliccabile) {
+    cella.disabled = true;
+    cella.style.cursor = 'default';
+  } else if (s.occupato && S.admin) {
+    cella.onclick = function () { foglioStaffPrenotazione(r, s); };
+  } else if (mio) {
+    cella.onclick = function () { foglioAnnulla(r, s, mio); };
+  } else {
+    cella.onclick = function () { foglioPrenota(r, s); };
+  }
+  return cella;
+}
+
+/* ── Prenotazione ─────────────────────────────────────── */
+
+function foglioPrenota(r, s) {
+  apriFoglio(function (f) {
+    f.appendChild(el('p', 'foglio-ora', s.ora));
+    f.appendChild(el('p', 'foglio-data', etichettaData(r.data)));
+
+    /* La società la dichiara sempre chi prenota: il link la preseleziona soltanto. */
+    var canaleScelto = CANALI[S.canale] ? S.canale : '';
+    var sigle = { powergym: 'pg', trasimenoflippers: 'tf' };
+
+    var cCan = el('div', 'campo');
+    cCan.appendChild(el('label', null, 'Sono un atleta di'));
+    var scelta = el('div', 'scelta');
+    var bottoni = {};
+    Object.keys(CANALI).forEach(function (k) {
+      var b = el('button', sigle[k] || '');
+      b.type = 'button';
+      var m = stemma(k);
+      if (m) b.appendChild(m);
+      b.appendChild(document.createTextNode(CANALI[k]));
+      b.setAttribute('aria-pressed', k === canaleScelto ? 'true' : 'false');
+      b.onclick = function () {
+        canaleScelto = k;
+        Object.keys(bottoni).forEach(function (j) {
+          bottoni[j].setAttribute('aria-pressed', j === k ? 'true' : 'false');
+        });
+      };
+      bottoni[k] = b;
+      scelta.appendChild(b);
+    });
+    cCan.appendChild(scelta);
+    f.appendChild(cCan);
+
+    var iNome = campoTesto(f, 'Nome', 'text', 'given-name');
+    var iCognome = campoTesto(f, 'Cognome', 'text', 'family-name');
+    var iTel = campoTesto(f, 'Telefono', 'tel', 'tel');
+
+    f.appendChild(el('p', 'nota',
+      'I dati servono solo allo staff per organizzare le visite e contattarti in caso di variazioni. Gli altri atleti non vedono il tuo nome.'));
+
+    var fila = el('div', 'fila');
+    var annulla = el('button', 'btn btn--fantasma', 'Annulla');
+    annulla.onclick = chiudiFoglio;
+    var conferma = el('button', 'btn', 'Prenota');
+    fila.appendChild(annulla);
+    fila.appendChild(conferma);
+    f.appendChild(fila);
+
+    conferma.onclick = function () {
+      var canale = canaleScelto;
+      var dati = {
+        data: r.data, ora: s.ora, canale: canale,
+        nome: iNome.value, cognome: iCognome.value, telefono: iTel.value
+      };
+      if (!canale) { toast('Scegli la tua società.'); return; }
+      if (!dati.nome.trim() || !dati.cognome.trim()) { toast('Servono nome e cognome.'); return; }
+      if (dati.telefono.replace(/\D/g, '').length < 8) { toast('Inserisci un numero di telefono valido.'); return; }
+
+      conferma.disabled = true;
+      conferma.textContent = 'Prenoto…';
+
+      chiama('apiPrenota', dati).then(function (res) {
+        if (!res.ok) {
+          toast(res.errore);
+          conferma.disabled = false;
+          conferma.textContent = 'Prenota';
+          if (res.ricarica) { chiudiFoglio(); apriGiorno(r.data); }
+          return;
+        }
+        if (!S.admin) {
+          salvaMia(r.data, s.ora, res.codice);
+          if (canale) { S.canale = canale; try { localStorage.setItem('canale', canale); } catch (e) {} }
+          foglioConfermato(r, s, res.codice);
+        } else {
+          chiudiFoglio();
+          toast('Prenotazione inserita.');
+          apriGiorno(r.data);
+        }
+      }).catch(function () {
+        toast('Connessione persa, la prenotazione non è stata salvata.');
+        conferma.disabled = false;
+        conferma.textContent = 'Prenota';
+      });
+    };
+  });
+}
+
+function campoTesto(padre, etichetta, tipo, autocomplete) {
+  var c = el('div', 'campo');
+  c.appendChild(el('label', null, etichetta));
+  var i = el('input');
+  i.type = tipo;
+  i.autocomplete = autocomplete;
+  c.appendChild(i);
+  padre.appendChild(c);
+  return i;
+}
+
+function foglioConfermato(r, s, codice) {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Prenotazione confermata'));
+    f.appendChild(el('p', 'foglio-data', etichettaData(r.data) + ' alle ' + s.ora));
+    f.appendChild(el('div', 'codice', codice));
+    f.appendChild(el('p', 'nota',
+      'Questo è il tuo codice. Su questo telefono la prenotazione resta salvata e puoi annullarla da solo; se cambi dispositivo, il codice ti serve per farlo.'));
+    var ok = el('button', 'btn', 'Ho capito');
+    ok.onclick = function () { chiudiFoglio(); apriGiorno(r.data); };
+    f.appendChild(ok);
+  });
+}
+
+function foglioAnnulla(r, s, codice) {
+  apriFoglio(function (f) {
+    f.appendChild(el('p', 'foglio-ora', s.ora));
+    f.appendChild(el('p', 'foglio-data', etichettaData(r.data)));
+    f.appendChild(el('p', null, 'Questa è la tua prenotazione. Vuoi liberare l’orario?'));
+    f.appendChild(el('p', 'nota', 'Se lo liberi, chiunque potrà prenderlo.'));
+
+    var fila = el('div', 'fila');
+    var indietro = el('button', 'btn btn--fantasma', 'Tienila');
+    indietro.onclick = chiudiFoglio;
+    var elimina = el('button', 'btn btn--pericolo', 'Annulla prenotazione');
+    fila.appendChild(indietro);
+    fila.appendChild(elimina);
+    f.appendChild(fila);
+
+    elimina.onclick = function () {
+      elimina.disabled = true;
+      chiama('apiAnnulla', { data: r.data, ora: s.ora, codice: codice }).then(function (res) {
+        if (!res.ok) { toast(res.errore); elimina.disabled = false; return; }
+        scordaMia(r.data, s.ora);
+        chiudiFoglio();
+        toast('Prenotazione annullata.');
+        apriGiorno(r.data);
+      }).catch(function () {
+        toast('Connessione persa. Riprova.');
+        elimina.disabled = false;
+      });
+    };
+  });
+}
+
+/* ── Staff ────────────────────────────────────────────── */
+
+function azioniStaff(r) {
+  var fila = el('div', 'fila');
+  fila.style.marginBottom = '16px';
+
+  var bElenco = el('button', 'btn btn--fantasma btn--piccolo', 'Elenco del giorno');
+  bElenco.onclick = function () { foglioElenco(r.data); };
+  fila.appendChild(bElenco);
+
+  var chiusa = r.stato === 'chiusa';
+  var bChiudi = el('button', 'btn btn--fantasma btn--piccolo', chiusa ? 'Riapri prenotazioni' : 'Chiudi prenotazioni');
+  bChiudi.onclick = function () {
+    bChiudi.disabled = true;
+    chiama('apiStatoData', conPin({ data: r.data, stato: chiusa ? 'aperta' : 'chiusa' })).then(function (res) {
+      if (!res.ok) { toast(res.errore); bChiudi.disabled = false; return; }
+      toast(chiusa ? 'Prenotazioni riaperte.' : 'Prenotazioni chiuse.');
+      apriGiorno(r.data);
+    });
+  };
+  fila.appendChild(bChiudi);
+
+  var bElimina = el('button', 'btn btn--pericolo btn--piccolo', 'Elimina data');
+  bElimina.onclick = function () { foglioEliminaData(r); };
+  fila.appendChild(bElimina);
+
+  return fila;
+}
+
+function foglioStaffPrenotazione(r, s) {
+  apriFoglio(function (f) {
+    f.appendChild(el('p', 'foglio-ora', s.ora));
+    f.appendChild(el('p', 'foglio-data', etichettaData(r.data)));
+
+    var scheda = el('div', 'avviso');
+    scheda.appendChild(el('div', null, (s.nome + ' ' + s.cognome).trim()));
+    if (s.telefono) {
+      var tel = el('a', null, s.telefono);
+      tel.href = 'tel:' + s.telefono.replace(/\s/g, '');
+      tel.style.color = 'inherit';
+      var r2 = el('div');
+      r2.style.fontFamily = 'var(--f-dati)';
+      r2.appendChild(tel);
+      scheda.appendChild(r2);
+    }
+    if (s.canale && CANALI[s.canale]) scheda.appendChild(el('div', null, CANALI[s.canale]));
+    f.appendChild(scheda);
+
+    var sposta = el('button', 'btn', 'Sposta a un altro orario');
+    sposta.style.marginBottom = '8px';
+    sposta.onclick = function () { foglioSposta(r, s); };
+    f.appendChild(sposta);
+
+    var fila = el('div', 'fila');
+    var chiudi = el('button', 'btn btn--fantasma', 'Chiudi');
+    chiudi.onclick = chiudiFoglio;
+    var elimina = el('button', 'btn btn--pericolo', 'Elimina');
+    fila.appendChild(chiudi);
+    fila.appendChild(elimina);
+    f.appendChild(fila);
+
+    elimina.onclick = function () {
+      elimina.disabled = true;
+      chiama('apiAnnulla', conPin({ data: r.data, ora: s.ora })).then(function (res) {
+        if (!res.ok) { toast(res.errore); elimina.disabled = false; return; }
+        scordaMia(r.data, s.ora);
+        chiudiFoglio();
+        toast('Prenotazione eliminata.');
+        apriGiorno(r.data);
+      });
+    };
+  });
+}
+
+/** Sposta una prenotazione: scegli data e uno degli orari ancora liberi. */
+function foglioSposta(r, s) {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Sposta la prenotazione'));
+    f.appendChild(el('p', 'foglio-data',
+      (s.nome + ' ' + s.cognome).trim() + ' — ora alle ' + s.ora + ' di ' + etichettaData(r.data)));
+
+    var cData = el('div', 'campo');
+    cData.appendChild(el('label', null, 'Nuova data'));
+    var selData = el('select');
+    (S.avvio.date || []).forEach(function (d) {
+      var o = el('option', null, etichettaData(d.data) + (d.stato === 'chiusa' ? ' (chiusa)' : ''));
+      o.value = d.data;
+      if (d.data === r.data) o.selected = true;
+      selData.appendChild(o);
+    });
+    cData.appendChild(selData);
+    f.appendChild(cData);
+
+    var cOra = el('div', 'campo');
+    cOra.appendChild(el('label', null, 'Nuovo orario'));
+    var selOra = el('select');
+    cOra.appendChild(selOra);
+    f.appendChild(cOra);
+
+    var avvisoVuoto = el('p', 'nota', '');
+    f.appendChild(avvisoVuoto);
+
+    var fila = el('div', 'fila');
+    var annulla = el('button', 'btn btn--fantasma', 'Annulla');
+    annulla.onclick = function () { foglioStaffPrenotazione(r, s); };
+    var conferma = el('button', 'btn', 'Sposta');
+    fila.appendChild(annulla);
+    fila.appendChild(conferma);
+    f.appendChild(fila);
+
+    function caricaOrari() {
+      svuota(selOra);
+      selOra.disabled = true;
+      conferma.disabled = true;
+      avvisoVuoto.textContent = 'Cerco gli orari liberi…';
+
+      chiama('apiSlot', conPin({ data: selData.value })).then(function (res) {
+        svuota(selOra);
+        if (!res.ok) { avvisoVuoto.textContent = res.errore; return; }
+
+        var liberi = res.slot.filter(function (o) {
+          if (o.ora === s.ora && res.data === r.data) return false; // è quello attuale
+          return !o.occupato;
+        });
+
+        if (!liberi.length) {
+          avvisoVuoto.textContent = 'Su questa data non è libero nessun orario.';
+          return;
+        }
+
+        liberi.forEach(function (o) {
+          var opt = el('option', null, o.ora + (o.passato ? ' — già passato' : ''));
+          opt.value = o.ora;
+          selOra.appendChild(opt);
+        });
+        selOra.disabled = false;
+        conferma.disabled = false;
+        avvisoVuoto.textContent = liberi.length + ' orar' + (liberi.length === 1 ? 'io libero' : 'i liberi') +
+          '. L’atleta non riceve un avviso automatico: avvisalo tu.';
+      });
+    }
+
+    selData.onchange = caricaOrari;
+    caricaOrari();
+
+    conferma.onclick = function () {
+      conferma.disabled = true;
+      conferma.textContent = 'Sposto…';
+      chiama('apiSposta', conPin({
+        data: r.data, ora: s.ora,
+        nuovaData: selData.value, nuovaOra: selOra.value
+      })).then(function (res) {
+        if (!res.ok) {
+          toast(res.errore);
+          conferma.disabled = false;
+          conferma.textContent = 'Sposta';
+          return;
+        }
+        chiudiFoglio();
+        toast('Spostata alle ' + res.ora + '.');
+        apriGiorno(res.data || r.data);
+      }).catch(function () {
+        toast('Connessione persa. Riprova.');
+        conferma.disabled = false;
+        conferma.textContent = 'Sposta';
+      });
+    };
+  });
+}
+
+function foglioElenco(data) {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Elenco del giorno'));
+    f.appendChild(el('p', 'foglio-data', etichettaData(data)));
+    var zona = el('div', 'caricamento', 'Carico…');
+    f.appendChild(zona);
+
+    var chiudi = el('button', 'btn btn--fantasma', 'Chiudi');
+    chiudi.onclick = chiudiFoglio;
+    f.appendChild(chiudi);
+
+    chiama('apiElenco', conPin({ data: data })).then(function (res) {
+      var nuovo;
+      if (!res.ok) {
+        nuovo = el('div', 'avviso', res.errore);
+      } else if (!res.righe.length) {
+        nuovo = el('div', 'avviso', 'Nessuna prenotazione per questa data.');
+      } else {
+        nuovo = el('div');
+        var chiavi = Object.keys(CANALI).concat(['']); // in fondo chi non ha società
+        chiavi.forEach(function (k) {
+          var gruppo = res.righe.filter(function (p) {
+            return k ? p.canale === k : !CANALI[p.canale];
+          });
+          if (!gruppo.length) return;
+
+          var testa = el('div', 'gruppo');
+          var nome = el('span', 'etichetta', CANALI[k] || 'Senza società');
+          if (k) nome.style.color = 'var(--' + (k === 'powergym' ? 'accent' : 'flippers') + ')';
+          testa.appendChild(nome);
+          testa.appendChild(el('span', 'n', gruppo.length + (gruppo.length === 1 ? ' atleta' : ' atleti')));
+          nuovo.appendChild(testa);
+
+          var scroll = el('div', 'tab-scroll');
+          var tab = el('table');
+          var thead = el('thead');
+          var tr = el('tr');
+          ['Ora', 'Atleta', 'Telefono'].forEach(function (t) { tr.appendChild(el('th', null, t)); });
+          thead.appendChild(tr);
+          tab.appendChild(thead);
+          var tbody = el('tbody');
+          gruppo.forEach(function (p) {
+            var r2 = el('tr');
+            r2.appendChild(el('td', 'num', p.ora));
+            r2.appendChild(el('td', null, (p.nome + ' ' + p.cognome).trim()));
+            r2.appendChild(el('td', 'num', p.telefono));
+            tbody.appendChild(r2);
+          });
+          tab.appendChild(tbody);
+          scroll.appendChild(tab);
+          nuovo.appendChild(scroll);
+        });
+      }
+      zona.parentNode.replaceChild(nuovo, zona);
+    });
+  });
+}
+
+function foglioNuovaData() {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Nuova data di visita'));
+    f.appendChild(el('p', 'foglio-data', 'I lunedì liberi sono già proposti qui sotto.'));
+
+    var sugg = (S.avvio.suggerimenti || []);
+    var c = el('div', 'campo');
+    c.appendChild(el('label', null, 'Data'));
+    var input = el('input');
+    input.type = 'date';
+    input.value = sugg[0] || '';
+    c.appendChild(input);
+    f.appendChild(c);
+
+    if (sugg.length) {
+      var scorciatoie = el('div', 'fila');
+      scorciatoie.style.marginBottom = '14px';
+      sugg.slice(0, 4).forEach(function (d) {
+        var b = el('button', 'btn btn--fantasma btn--piccolo', etichettaData(d).replace('lunedì ', ''));
+        b.onclick = function () { input.value = d; };
+        scorciatoie.appendChild(b);
+      });
+      f.appendChild(scorciatoie);
+    }
+
+    var fila = el('div', 'fila');
+    var annulla = el('button', 'btn btn--fantasma', 'Annulla');
+    annulla.onclick = chiudiFoglio;
+    var aggiungi = el('button', 'btn', 'Aggiungi');
+    fila.appendChild(annulla);
+    fila.appendChild(aggiungi);
+    f.appendChild(fila);
+
+    aggiungi.onclick = function () {
+      if (!input.value) { toast('Scegli una data.'); return; }
+      aggiungi.disabled = true;
+      chiama('apiNuovaData', conPin({ data: input.value })).then(function (res) {
+        if (!res.ok) { toast(res.errore); aggiungi.disabled = false; return; }
+        chiudiFoglio();
+        toast('Data aggiunta.');
+        avvia();
+      });
+    };
+  });
+}
+
+function foglioEliminaData(r) {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Eliminare questa data?'));
+    f.appendChild(el('p', 'foglio-data', etichettaData(r.data)));
+    var quante = r.slot.filter(function (s) { return s.occupato; }).length;
+    f.appendChild(el('p', null, quante
+      ? 'Verranno cancellate anche le ' + quante + ' prenotazioni già registrate. L’operazione non si può annullare.'
+      : 'Non ci sono prenotazioni su questa data.'));
+
+    var fila = el('div', 'fila');
+    var no = el('button', 'btn btn--fantasma', 'No, tienila');
+    no.onclick = chiudiFoglio;
+    var si = el('button', 'btn btn--pericolo', 'Elimina');
+    fila.appendChild(no);
+    fila.appendChild(si);
+    f.appendChild(fila);
+
+    si.onclick = function () {
+      si.disabled = true;
+      chiama('apiEliminaData', conPin({ data: r.data })).then(function (res) {
+        if (!res.ok) { toast(res.errore); si.disabled = false; return; }
+        chiudiFoglio();
+        toast('Data eliminata.');
+        S.giorno = null;
+        avvia();
+      });
+    };
+  });
+}
+
+function foglioQR() {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Link e QR'));
+    f.appendChild(el('p', 'nota',
+      'Il primo QR basta da solo: la società la sceglie l’atleta quando prenota. Gli altri due sono comodi se vuoi due locandine separate — preselezionano il club, ma l’atleta può sempre correggerlo. Non diffondere il PIN dello staff.'));
+
+    var base = S.avvio.urlApp || BASE_URL;
+    var elenco = [{ chiave: '', nome: 'Per tutti', url: base }];
+    Object.keys(CANALI).forEach(function (k) {
+      elenco.push({ chiave: k, nome: CANALI[k], url: base + '?c=' + k });
+    });
+
+    elenco.forEach(function (voce) {
+      var k = voce.chiave, url = voce.url;
+      var blocco = el('div', 'qr-blocco');
+
+      var titolo = el('div', 'chip ' + (k ? 'chip--' + k : 'chip--staff'), voce.nome);
+      blocco.appendChild(titolo);
+
+      var tela = el('div', 'qr-tela');
+      blocco.appendChild(tela);
+      try {
+        new QRCode(tela, { text: url, width: 168, height: 168, correctLevel: QRCode.CorrectLevel.M });
+      } catch (e) {
+        tela.remove();
+      }
+
+      blocco.appendChild(el('div', 'qr-url', url));
+      f.appendChild(blocco);
+    });
+
+    var chiudi = el('button', 'btn btn--fantasma', 'Chiudi');
+    chiudi.style.marginTop = '10px';
+    chiudi.onclick = chiudiFoglio;
+    f.appendChild(chiudi);
+  });
+}
+
+function foglioPin() {
+  apriFoglio(function (f) {
+    f.appendChild(el('h3', null, 'Area staff'));
+    f.appendChild(el('p', 'nota', 'Inserisci il PIN per vedere i nomi e gestire le date.'));
+
+    var c = el('div', 'campo');
+    c.appendChild(el('label', null, 'PIN'));
+    var input = el('input');
+    input.type = 'password';
+    input.inputMode = 'numeric';
+    input.autocomplete = 'off';
+    c.appendChild(input);
+    f.appendChild(c);
+
+    var fila = el('div', 'fila');
+    var annulla = el('button', 'btn btn--fantasma', 'Annulla');
+    annulla.onclick = chiudiFoglio;
+    var entra = el('button', 'btn', 'Entra');
+    fila.appendChild(annulla);
+    fila.appendChild(entra);
+    f.appendChild(fila);
+
+    function prova() {
+      var pin = input.value.trim();
+      if (!pin) return;
+      entra.disabled = true;
+      entra.textContent = 'Verifico…';
+      chiama('apiAvvio', { pin: pin }).then(function (r) {
+        if (!r.admin) {
+          toast('PIN non valido.');
+          entra.disabled = false;
+          entra.textContent = 'Entra';
+          input.value = '';
+          input.focus();
+          return;
+        }
+        S.pin = pin;
+        sessionStorage.setItem('pin', pin);
+        S.avvio = r;
+        S.admin = true;
+        chiudiFoglio();
+        aggiornaTestata();
+        if (S.giorno) apriGiorno(S.giorno); else mostraDate();
+      });
+    }
+
+    entra.onclick = prova;
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') prova(); });
+  });
+}
+
+document.getElementById('btn-staff').onclick = function () {
+  if (S.admin) {
+    S.pin = '';
+    S.admin = false;
+    sessionStorage.removeItem('pin');
+    toast('Sei uscito dall’area staff.');
+    S.giorno = null;
+    avvia();
+  } else {
+    foglioPin();
+  }
+};
+
+avvia();
+</script>
+</body>
+</html>
