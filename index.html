@@ -688,14 +688,24 @@ var AZIONI = {
 /* Il tipo text/plain e voluto: con application/json il browser manderebbe prima
    una richiesta di controllo che Apps Script non sa gestire. Nome, cognome e
    telefono viaggiano nel corpo, mai nell'indirizzo. */
-function chiama(nome, arg) {
+var RILEGGIBILI = { avvio: 1, slot: 1, elenco: 1 };
+
+function chiama(nome, arg, tentativo) {
+  tentativo = tentativo || 1;
+  var azione = AZIONI[nome];
   return fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ azione: AZIONI[nome], dati: arg || {} })
+    body: JSON.stringify({ azione: azione, dati: arg || {} })
   }).then(function (r) {
     if (!r.ok) throw new Error('Risposta ' + r.status);
     return r.json();
+  }).catch(function (e) {
+    /* Google ogni tanto perde una richiesta. Le letture le ripetiamo da soli,
+       le prenotazioni no: ripeterle rischierebbe di creare un doppione. */
+    if (!RILEGGIBILI[azione] || tentativo >= 3) throw e;
+    return new Promise(function (ok) { setTimeout(ok, tentativo * 700); })
+      .then(function () { return chiama(nome, arg, tentativo + 1); });
   });
 }
 
