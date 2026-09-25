@@ -730,6 +730,47 @@
   .lento.visibile { transform: translate(-50%, 0); }
   .lento .rotella { width: 16px; height: 16px; border-width: 2px; }
 
+  /* Invito a installare l'app, stile scheda App Store */
+  .installa {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-top: 28px;
+    padding: 16px 48px 16px 16px;
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: var(--ombra-card);
+  }
+  .installa-icona {
+    width: 56px;
+    height: 56px;
+    flex: none;
+    border-radius: 13px;
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.10);
+  }
+  .installa-testo strong { display: block; font-size: 17px; line-height: 22px; font-weight: 600; }
+  .installa-testo p { margin: 3px 0 0; font-size: 15px; line-height: 20px; color: var(--label-2); }
+  .ico-inline { display: inline-flex; vertical-align: -3px; color: var(--tint); }
+  .ico-inline svg { width: 18px; height: 18px; }
+  .installa .btn { width: auto; height: 34px; margin-top: 10px; padding: 0 18px; border-radius: 17px; font-size: 15px; }
+  .installa-chiudi {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--fill);
+    color: var(--label-2);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
   /* ── Piè di pagina ────────────────────────────────────────────────── */
   .piede { margin-top: 40px; text-align: center; }
   .piede p { margin: 4px 0 0; font-size: 13px; color: var(--label-2); }
@@ -1155,6 +1196,7 @@ function mostraDate() {
     app.appendChild(statoVuoto('calendario',
       'Nessuna data in programma',
       S.admin ? 'Aggiungi la prossima visita da “Nuova data di visita”.' : 'Le nuove date compariranno qui. Riprova tra qualche giorno.'));
+    aggiungiInvitoApp(app);
     return;
   }
 
@@ -1164,6 +1206,86 @@ function mostraDate() {
   app.appendChild(el('p', 'nota-sezione', S.admin
     ? 'L’anello mostra quanta parte della serata è ancora libera.'
     : 'Gli altri atleti non vedono il tuo nome: per loro l’orario risulta solo occupato.'));
+  aggiungiInvitoApp(app);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   App sul telefono
+   Su Android Chrome propone da solo l’installazione: intercettiamo la
+   proposta e la offriamo con un pulsante nostro. Su iPhone non esiste un
+   pulsante: spieghiamo il gesto (Condividi → Aggiungi alla schermata Home).
+   ════════════════════════════════════════════════════════════════════ */
+var propostaInstallazione = null;
+
+function eInstallata() {
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
+function eIPhone() {
+  var ua = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+function aggiungiInvitoApp(app) {
+  if (eInstallata() || leggi(localStorage, 'invito-app-chiuso')) return;
+  var iphone = eIPhone();
+  if (!iphone && !propostaInstallazione) return;
+
+  var box = el('div', 'installa');
+  var img = el('img', 'installa-icona');
+  img.src = 'apple-touch-icon.png';
+  img.alt = '';
+  box.appendChild(img);
+
+  var t = el('div', 'installa-testo');
+  t.appendChild(el('strong', null, 'Tienila sul telefono come un’app'));
+  var p = el('p');
+  if (iphone) {
+    p.appendChild(document.createTextNode('Tocca '));
+    p.appendChild(icona('condividi', 'ico-inline'));
+    p.appendChild(document.createTextNode(' Condividi, poi “Aggiungi alla schermata Home”. Se sei dentro WhatsApp, apri prima il link in Safari.'));
+  } else {
+    p.textContent = 'La ritrovi tra le app, senza cercare il link ogni volta.';
+  }
+  t.appendChild(p);
+  if (!iphone) {
+    var b = el('button', 'btn', 'Installa');
+    b.type = 'button';
+    b.onclick = function () {
+      var proposta = propostaInstallazione;
+      if (!proposta) return;
+      proposta.prompt();
+      proposta.userChoice.then(function () {
+        propostaInstallazione = null;
+        box.remove();
+      });
+    };
+    t.appendChild(b);
+  }
+  box.appendChild(t);
+
+  var chiudi = el('button', 'installa-chiudi', '×');
+  chiudi.type = 'button';
+  chiudi.setAttribute('aria-label', 'Non mostrare più');
+  chiudi.onclick = function () { scrivi(localStorage, 'invito-app-chiuso', '1'); box.remove(); };
+  box.appendChild(chiudi);
+
+  app.appendChild(box);
+}
+
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  propostaInstallazione = e;
+  if (!S.giorno && S.avvio) mostraDate();
+});
+window.addEventListener('appinstalled', function () {
+  propostaInstallazione = null;
+  scrivi(localStorage, 'invito-app-chiuso', '1');
+  flash('App aggiunta al telefono', 'ok');
+  if (!S.giorno && S.avvio) mostraDate();
+});
+
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(function () {});
 }
 
 function rigaData(d) {
