@@ -2335,6 +2335,14 @@ function creaPDF(r, avvio) {
     var doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
     var M = 16, L = 210 - 2 * M, y = M;
     var dataLunga = new Date(r.data + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    /* Titolo del documento: è quello che il visualizzatore mostra al posto di un codice */
+    doc.setProperties({
+      title: perPDF('Visita medica sportiva - ' + maiuscola(dataLunga)),
+      subject: 'Prenotazioni della visita medica sportiva',
+      author: 'ASD Power Gym Passignano',
+      creator: 'Prenotazioni visite mediche'
+    });
+    doc.setDisplayMode('fullwidth', 'continuous');
 
     /* Intestazione: titolo a sinistra, loghi a destra */
     var xLogo = 210 - M;
