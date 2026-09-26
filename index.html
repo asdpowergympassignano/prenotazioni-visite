@@ -306,6 +306,7 @@
   .icona.grigia { background: #8E8E93; }
   .icona.indaco { background: #5856D6; }
   .icona.arancio{ background: #FF9500; }
+  .icona.rossa  { background: #FF3B30; }
 
   /* Anello stile Attività: quanta parte della serata è ancora libera */
   .anello { width: 36px; height: 36px; flex: none; }
@@ -858,6 +859,7 @@ var ICONE = {
   avviso: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5v7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="currentColor"/></svg>',
   info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.8" r="1.6" fill="currentColor"/><path d="M12 10.5v7.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
   condividi: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5v10M6.5 6L10 2.5 13.5 6M5.5 9H5a1.5 1.5 0 0 0-1.5 1.5v5A1.5 1.5 0 0 0 5 17h10a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 15 9h-.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  documento: '<svg viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 2.8h6.6L15.5 6.7v10.5H5z"/><path d="M11.6 2.8v3.9h3.9"/><path d="M7.8 10.6h4.9M7.8 13.6h4.9" stroke-linecap="round"/></g></svg>',
   copia: '<svg viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6.5" y="6.5" width="10" height="10" rx="2"/><path d="M13.5 6.5V5A1.5 1.5 0 0 0 12 3.5H5A1.5 1.5 0 0 0 3.5 5v7A1.5 1.5 0 0 0 5 13.5h1.5"/></g></svg>'
 };
 
@@ -1563,6 +1565,7 @@ function disegnaGiornoStaff(app, r) {
   var g2 = el('div', 'gruppo');
   g2.appendChild(rigaInterruttore(r));
   g2.appendChild(rigaIcona('lista', 'indaco', 'Elenco del giorno', function () { foglioElenco(r.data); }));
+  g2.appendChild(rigaIcona('documento', 'rossa', 'PDF per il medico', function () { foglioPDF(r.data); }));
   app.appendChild(g2);
 
   app.appendChild(el('div', 'sezione', 'Orari'));
@@ -2107,6 +2110,15 @@ function foglioElenco(data) {
     zona.appendChild(att);
     f.appendChild(zona);
 
+    var pilaPdf = el('div', 'pila');
+    var bPdf = el('button', 'btn secondario');
+    bPdf.type = 'button';
+    bPdf.appendChild(icona('documento', 'ico'));
+    bPdf.appendChild(document.createTextNode('PDF per il medico'));
+    bPdf.onclick = function () { foglioPDF(data); };
+    pilaPdf.appendChild(bPdf);
+    f.appendChild(pilaPdf);
+
     attendi(chiama('apiElenco', conPin({ data: data }))).then(function (res) {
       if (!res.ok) throw errUtente(res.errore);
       svuota(zona);
@@ -2245,6 +2257,282 @@ function foglioEliminaData(r) {
 }
 
 /* ── QR ───────────────────────────────────────────────────────────── */
+/* ── PDF per il medico ────────────────────────────────────────────── */
+var pdfPronto = null;
+function caricaJsPDF() {
+  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+  if (pdfPronto) return pdfPronto;
+  pdfPronto = new Promise(function (ok, no) {
+    var s = el('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = ok;
+    s.onerror = function () { pdfPronto = null; no(new Error('libreria PDF')); };
+    document.head.appendChild(s);
+  });
+  return pdfPronto;
+}
+
+/* I caratteri base del PDF coprono l'italiano; lettere più rare (ğ, ł…) diventano
+   la lettera base, così un nome straniero non esce illeggibile. */
+function perPDF(t) {
+  return String(t == null ? '' : t).replace(/[^\u0000-ÿ]/g, function (c) {
+    var base = c.normalize ? c.normalize('NFD').charAt(0) : c;
+    return base.charCodeAt(0) <= 255 ? base : '?';
+  });
+}
+
+/* Prima di accorciare un testo si prova a rimpicciolirlo, fino a un minimo:
+   un numero di telefono tagliato non servirebbe al medico. */
+function rimpicciolisci(doc, t, larghezza, massimo, minimo) {
+  var dim = massimo;
+  doc.setFontSize(dim);
+  while (dim > minimo && doc.getTextWidth(t) > larghezza) { dim -= 0.5; doc.setFontSize(dim); }
+}
+
+function taglia(doc, t, larghezza) {
+  if (doc.getTextWidth(t) <= larghezza) return t;
+  while (t.length > 1 && doc.getTextWidth(t + '...') > larghezza) t = t.slice(0, -1);
+  return t + '...';
+}
+
+/* I loghi arrivano come SVG o JPEG: li passo da una tela e li salvo in JPEG,
+   nitidi ma leggeri, così il PDF si manda facilmente anche su WhatsApp */
+function logoPerPDF(src) {
+  return new Promise(function (ok, no) {
+    var rapporto = 0;
+    if (src.indexOf('data:image/svg+xml;base64,') === 0) {
+      try {
+        var vb = atob(src.split(',')[1]).match(/viewBox="\s*[\d.\-]+[\s,]+[\d.\-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/);
+        if (vb) rapporto = parseFloat(vb[1]) / parseFloat(vb[2]);
+      } catch (e) {}
+    }
+    var img = new Image();
+    img.onload = function () {
+      var r = rapporto || (img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 2);
+      var altezza = 200, larghezza = Math.round(altezza * r);
+      var tela = el('canvas');
+      tela.width = larghezza;
+      tela.height = altezza;
+      var ctx = tela.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, larghezza, altezza);
+      ctx.drawImage(img, 0, 0, larghezza, altezza);
+      ok({ dati: tela.toDataURL('image/jpeg', 0.9), rapporto: r });
+    };
+    img.onerror = function () { no(new Error('logo')); };
+    img.src = src;
+  });
+}
+
+var COLORE_PDF = { powergym: [229, 72, 77], trasimenoflippers: [255, 149, 0] };
+
+function creaPDF(r, avvio) {
+  var chiavi = Object.keys(CANALI);
+  return Promise.all(chiavi.map(function (k) {
+    return LOGHI[k] ? logoPerPDF(LOGHI[k]).catch(function () { return null; }) : Promise.resolve(null);
+  })).then(function (loghi) {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    var M = 16, L = 210 - 2 * M, y = M;
+    var dataLunga = new Date(r.data + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    /* Intestazione: titolo a sinistra, loghi a destra */
+    var xLogo = 210 - M;
+    loghi.slice().reverse().forEach(function (lg) {
+      if (!lg) return;
+      var hL = 14, wL = Math.min(hL * lg.rapporto, 34);
+      xLogo -= wL;
+      doc.addImage(lg.dati, 'JPEG', xLogo, y - 2, wL, wL / lg.rapporto);
+      xLogo -= 4;
+    });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(0);
+    doc.text('Visita medica sportiva', M, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(13);
+    doc.text(perPDF(maiuscola(dataLunga)), M, y + 12);
+    doc.setFontSize(9.5);
+    doc.setTextColor(110);
+    doc.text(perPDF('Dalle ' + avvio.oraInizio + ' alle ' + avvio.oraFine + '  ·  visite da ' + (avvio.durata || 15) + ' minuti'), M, y + 17.5);
+    y += 24;
+    doc.setDrawColor(215);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, 210 - M, y);
+    y += 8;
+
+    /* Riepilogo */
+    var occupati = r.slot.filter(function (s) { return s.occupato; });
+    var parti = ['Prenotati: ' + occupati.length + ' su ' + r.slot.length];
+    chiavi.forEach(function (k) {
+      parti.push(CANALI[k] + ': ' + occupati.filter(function (s) { return s.canale === k; }).length);
+    });
+    doc.setFontSize(10.5);
+    doc.setTextColor(40);
+    doc.text(perPDF(parti.join('     ')), M, y);
+    y += 6;
+
+    /* Tabella */
+    var col = [
+      { t: 'Ora', w: 16 }, { t: 'Cognome e nome', w: 52 }, { t: 'Società', w: 36 },
+      { t: 'Telefono', w: 30 }, { t: 'Presente', w: 18 }, { t: 'Note', w: 26 }
+    ];
+    var hTesta = 8, hRiga = 11.5, x;
+    doc.setFillColor(242, 242, 247);
+    doc.rect(M, y, L, hTesta, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(95);
+    x = M;
+    col.forEach(function (c) { doc.text(perPDF(c.t.toUpperCase()), x + 2.5, y + 5.3); x += c.w; });
+    y += hTesta;
+
+    r.slot.forEach(function (s, i) {
+      if (i % 2 === 1) { doc.setFillColor(250, 250, 252); doc.rect(M, y, L, hRiga, 'F'); }
+      var yt = y + hRiga / 2 + 1.4;
+      x = M;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(s.occupato ? 0 : 165);
+      doc.text(s.ora, x + 2.5, yt);
+      x += col[0].w;
+      if (s.occupato) {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0);
+        var nomeCompleto = perPDF(((s.cognome || '') + ' ' + (s.nome || '')).trim() || 'Senza nome');
+        rimpicciolisci(doc, nomeCompleto, col[1].w - 4, 11, 9);
+        doc.text(taglia(doc, nomeCompleto, col[1].w - 4), x + 2.5, yt);
+        x += col[1].w;
+        var rgb = COLORE_PDF[s.canale] || [160, 160, 160];
+        doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+        doc.circle(x + 3.6, yt - 1.25, 1.15, 'F');
+        doc.setFontSize(9.5);
+        doc.setTextColor(60);
+        doc.text(taglia(doc, perPDF(CANALI[s.canale] || '-'), col[2].w - 8), x + 6.8, yt);
+        x += col[2].w;
+        doc.setTextColor(40);
+        var tel = perPDF(s.telefono || '');
+        rimpicciolisci(doc, tel, col[3].w - 3, 10, 7.5);
+        doc.text(taglia(doc, tel, col[3].w - 3), x + 2.5, yt);
+        x += col[3].w;
+        doc.setDrawColor(140);
+        doc.setLineWidth(0.35);
+        doc.rect(x + col[4].w / 2 - 2.3, yt - 3.7, 4.6, 4.6);
+      } else {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(10);
+        doc.setTextColor(175);
+        doc.text('libero', x + 2.5, yt);
+      }
+      doc.setDrawColor(228);
+      doc.setLineWidth(0.2);
+      doc.line(M, y + hRiga, M + L, y + hRiga);
+      y += hRiga;
+    });
+
+    /* Piè di pagina */
+    var adesso = new Date();
+    var generato = adesso.toLocaleDateString('it-IT') + ' alle ' + due(adesso.getHours()) + ':' + due(adesso.getMinutes());
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(120);
+    doc.text('Documento riservato: contiene dati personali degli atleti. Da consegnare solo al medico.', M, 297 - 17);
+    doc.text(perPDF('ASD Power Gym Passignano · TrasimenoFlippers   -   Generato il ' + generato), M, 297 - 12);
+    return doc.output('blob');
+  });
+}
+
+function bottoneIcona(ic, testo, classe) {
+  var b = el('button', classe);
+  b.type = 'button';
+  b.appendChild(icona(ic, 'ico'));
+  b.appendChild(document.createTextNode(testo));
+  return b;
+}
+
+function foglioPDF(data) {
+  apriFoglio(function (f) {
+    testaFoglio(f, 'PDF per il medico', 'Chiudi');
+    var e = el('div', 'esito');
+    var c = icona('documento', 'cerchio');
+    c.style.background = '#FF3B30';
+    c.style.animation = 'none';
+    e.appendChild(c);
+    e.appendChild(el('h2', null, maiuscola(etichettaData(data))));
+    var stato = el('p', null, 'Preparo il PDF con le prenotazioni aggiornate…');
+    e.appendChild(stato);
+    f.appendChild(e);
+
+    var pila = el('div', 'pila');
+    var att = el('div', 'stato-vuoto');
+    att.style.padding = '8px';
+    att.appendChild(el('span', 'rotella'));
+    pila.appendChild(att);
+    f.appendChild(pila);
+    f.appendChild(el('p', 'nota-sezione centrata', 'Contiene nomi e telefoni degli atleti: invialo solo al medico.'));
+
+    function prepara() {
+      svuota(pila);
+      pila.appendChild(att);
+      stato.textContent = 'Preparo il PDF con le prenotazioni aggiornate…';
+      /* I dati si rileggono adesso: il PDF è sempre aggiornato all'ultimo minuto */
+      Promise.all([attendi(chiama('apiSlot', conPin({ data: data }))), caricaJsPDF()])
+        .then(function (ris) {
+          var r = ris[0];
+          if (!r.ok) throw errUtente(r.errore);
+          if (!r.admin) throw errUtente('Serve l’accesso staff per creare il PDF.');
+          return creaPDF(r, S.avvio).then(function (blob) { return { r: r, blob: blob }; });
+        })
+        .then(function (x) {
+          var prenotati = x.r.slot.filter(function (s) { return s.occupato; }).length;
+          stato.textContent = plurale(prenotati, 'prenotazione', 'prenotazioni') + ' su ' + x.r.slot.length + '. Il PDF è pronto.';
+          svuota(pila);
+          var nome = 'visita-medica-' + data + '.pdf';
+          var url = URL.createObjectURL(x.blob);
+          var file = null;
+          try { file = new File([x.blob], nome, { type: 'application/pdf' }); } catch (err) {}
+          var condivisibile = file && navigator.canShare && navigator.canShare({ files: [file] });
+
+          if (condivisibile) {
+            var invia = bottoneIcona('condividi', 'Invia il PDF', 'btn');
+            invia.onclick = function () {
+              navigator.share({
+                files: [file],
+                title: 'Visita medica ' + etichettaData(data),
+                text: 'Elenco delle prenotazioni per la visita medica sportiva di ' + etichettaData(data) + '.'
+              }).catch(function () {});
+            };
+            pila.appendChild(invia);
+          }
+          var scarica = bottoneIcona('documento', 'Scarica il PDF', condivisibile ? 'btn secondario' : 'btn');
+          scarica.onclick = function () {
+            var a = el('a');
+            a.href = url;
+            a.download = nome;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          };
+          pila.appendChild(scarica);
+          var stampa = bottoneIcona('tabella', 'Apri per stampare', 'btn secondario');
+          stampa.onclick = function () { window.open(url, '_blank'); };
+          pila.appendChild(stampa);
+        })
+        .catch(function (err) {
+          svuota(pila);
+          stato.textContent = err && err.message === 'libreria PDF'
+            ? 'Non riesco a caricare il generatore di PDF. Controlla la connessione.'
+            : testoErrore(err);
+          var riprova = el('button', 'btn secondario', 'Riprova');
+          riprova.type = 'button';
+          riprova.onclick = prepara;
+          pila.appendChild(riprova);
+        });
+    }
+    prepara();
+  });
+}
+
 var qrPronto = null;
 function caricaQR() {
   if (window.QRCode) return Promise.resolve();
