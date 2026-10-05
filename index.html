@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Visita medica">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="description" content="Prenota l’orario della visita medica sportiva. ASD Power Gym Passignano e TrasimenoFlippers.">
+<meta name="description" content="Prenota l’orario della visita medica sportiva o della nutrizionista. ASD Power Gym Passignano e TrasimenoFlippers.">
 <title>Visita Medica Sportiva</title>
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -42,6 +42,7 @@
     --hud:           rgba(255,255,255,.94);
     --veil:          rgba(0,0,0,.28);
     --ombra-card:    0 1px 2px rgba(0,0,0,.04);
+    --segmento:      #FFFFFF;
 
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
@@ -73,6 +74,7 @@
       --hud:           rgba(44,44,46,.94);
       --veil:          rgba(0,0,0,.55);
       --ombra-card:    none;
+      --segmento:      #636366;
     }
   }
 
@@ -643,6 +645,38 @@
   .persona p { margin: 0; font-size: 15px; color: var(--label-2); }
   .persona p::first-letter { text-transform: uppercase; }
 
+  /* Scelta del servizio e del tipo di appuntamento: controllo segmentato di iOS */
+  .segmenti {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 9px;
+    background: var(--fill);
+  }
+  .segmenti.servizi { margin-top: 18px; }
+  .segmento {
+    height: 32px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--label);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background-color .2s, box-shadow .2s;
+  }
+  .segmento[aria-checked="true"] {
+    background: var(--segmento);
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04);
+  }
+
   /* Suggerimenti di data */
   .suggerimenti { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 4px 0; }
   .pillola {
@@ -824,15 +858,32 @@
 var API = 'https://script.google.com/macros/s/AKfycbzlKzQZkEeAdE0oAvrxFU99DLVyyevIMJjKO2AWSFZbYuBO7rn8qp4Nf8nlc88UsGZpOA/exec';
 var PAGINA = location.origin + location.pathname;
 var PARAM_C = (new URLSearchParams(location.search).get('c') || '').toLowerCase();
+var PARAM_S = (new URLSearchParams(location.search).get('s') || '').toLowerCase();
 var CHIAVE_CACHE = 'prenotazioni-avvio-v1';
 
 var CANALI = {};   /* nomi delle società: arrivano con la prima risposta */
 var LOGHI = {};
 var COLORE = { powergym: 'var(--pg)', trasimenoflippers: 'var(--tf)' };
 
+/* I servizi prenotabili e le parole con cui la pagina ne parla */
+var SERVIZI = {
+  medica: {
+    nome: 'Visita medica', breve: 'visita medica', titolo: 'Visita medica sportiva',
+    evento: 'Visita medica sportiva', unita: 'visite', nuova: 'Nuova data di visita',
+    pdf: 'PDF per il medico', destinatario: 'al medico', file: 'visita-medica'
+  },
+  nutrizionista: {
+    nome: 'Nutrizionista', breve: 'nutrizionista', titolo: 'Nutrizionista',
+    evento: 'Appuntamento con la nutrizionista', unita: 'appuntamenti', nuova: 'Nuova data con la nutrizionista',
+    pdf: 'PDF per la nutrizionista', destinatario: 'alla nutrizionista', file: 'nutrizionista'
+  }
+};
+var TIPI = { prima: 'Prima visita', controllo: 'Controllo' };
+
 var S = {
   pin: leggi(sessionStorage, 'pin'),
   admin: false,
+  servizio: SERVIZI[PARAM_S] ? PARAM_S : 'medica',
   canale: '',
   avvio: null,
   giorno: null,
@@ -854,6 +905,7 @@ var ICONE = {
   spunta: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   calendario: '<svg viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4.5" width="14" height="12.5" rx="2.5"/><path d="M3 8.5h14M7 2.8v3.4M13 2.8v3.4"/></g></svg>',
   telefono: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6.4 3.1c.4-.1.8.1 1 .5l1.4 3c.2.4.1.9-.2 1.2L7.4 9c.9 1.7 2.2 3 3.9 3.9l1.2-1.2c.3-.3.8-.4 1.2-.2l3 1.4c.4.2.6.6.5 1-.3 1.6-1.7 2.8-3.4 2.6C8.5 16 4 11.5 3.5 6.2 3.3 4.6 4.6 3.3 6.4 3.1z" fill="currentColor"/></svg>',
+  orologio: '<svg viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4.2l2.8 1.8"/></g></svg>',
   frecce: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7h11m-3.2-3.5L15.3 7l-3.5 3.5M16 13H5m3.2-3.5L4.7 13l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   lucchetto: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>',
   avviso: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5v7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="currentColor"/></svg>',
@@ -905,7 +957,21 @@ function etichettaCorta(iso) {
 
 function plurale(n, uno, tanti) { return n + ' ' + (n === 1 ? uno : tanti); }
 
-function durata() { return (S.avvio && S.avvio.durata) || 15; }
+/* Durata degli appuntamenti della giornata aperta (la visita medica ha sempre la stessa) */
+function durata() { return (S.slot && S.slot.durata) || (S.avvio && S.avvio.durata) || 15; }
+
+function SV() { return SERVIZI[S.servizio]; }
+function nutri() { return S.servizio === 'nutrizionista'; }
+function servizioDi(d) { return d.servizio || 'medica'; }   /* le risposte salvate prima della nutrizionista non lo hanno */
+
+/* Stessi slot che calcola il server: l'ultimo finisce entro l'ora di fine */
+function minutiDi(hhmm) { var p = String(hhmm).split(':'); return +p[0] * 60 + +p[1]; }
+function slotDi(o) {
+  var out = [], fine = minutiDi(o.fine), d = +o.durata;
+  if (!(d >= 5) || !o.inizio || !o.fine) return out;
+  for (var m = minutiDi(o.inizio); m + d <= fine; m += d) out.push(due(Math.floor(m / 60)) + ':' + due(m % 60));
+  return out;
+}
 
 function iniziali(nome, cognome) {
   return ((nome || '').charAt(0) + (cognome || '').charAt(0)).toUpperCase() || '?';
@@ -1000,7 +1066,7 @@ function copiaTesto(testo) {
 var AZIONI = {
   apiAvvio: 'avvio', apiSlot: 'slot', apiPrenota: 'prenota', apiAnnulla: 'annulla',
   apiSposta: 'sposta', apiNuovaData: 'nuovaData', apiStatoData: 'statoData',
-  apiEliminaData: 'eliminaData', apiElenco: 'elenco'
+  apiEliminaData: 'eliminaData', apiElenco: 'elenco', apiOrariData: 'orariData'
 };
 
 function attesa(ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); }
@@ -1072,6 +1138,8 @@ function chiama(nome, dati) {
 }
 
 function conPin(d) { d = d || {}; if (S.pin) d.pin = S.pin; return d; }
+/* Ogni richiesta su una giornata dice di quale servizio si parla */
+function perServizio(d) { d = conPin(d); d.servizio = S.servizio; return d; }
 
 function nuovoCodice() {
   var alfabeto = 'ACDEFGHJKLMNPQRTUVWXY3467', out = '', n = new Uint32Array(6);
@@ -1080,13 +1148,15 @@ function nuovoCodice() {
   return out;
 }
 
-/* Le prenotazioni fatte da questo telefono: servono per riconoscerle e annullarle */
-function chiaveMia(data, ora) { return 'mia:' + data + ':' + ora; }
+/* Le prenotazioni fatte da questo telefono: servono per riconoscerle e annullarle.
+   Le visite mediche tengono la chiave di sempre, per non perdere quelle già fatte. */
+function prefissoMie(data) { return 'mia:' + (nutri() ? S.servizio + ':' : '') + data + ':'; }
+function chiaveMia(data, ora) { return prefissoMie(data) + ora; }
 function salvaMia(data, ora, codice) { scrivi(localStorage, chiaveMia(data, ora), codice); }
 function leggiMia(data, ora) { return leggi(localStorage, chiaveMia(data, ora)); }
 function scordaMia(data, ora) { scrivi(localStorage, chiaveMia(data, ora), null); }
 function mieDellaData(data) {
-  var out = {}, prefisso = 'mia:' + data + ':';
+  var out = {}, prefisso = prefissoMie(data);
   try {
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
@@ -1109,9 +1179,11 @@ function leggiCache() {
    ════════════════════════════════════════════════════════════════════ */
 function intestazioneHome() {
   var a = S.avvio;
-  $('sopratitolo').textContent = a ? 'Lunedì · ' + a.oraInizio + '–' + a.oraFine : 'Lunedì';
-  $('titolo').textContent = 'Visita medica';
-  $('nav-titolo').textContent = 'Visita medica';
+  $('sopratitolo').textContent = nutri()
+    ? 'Consulenza nutrizionale'
+    : (a ? 'Lunedì · ' + a.oraInizio + '–' + a.oraFine : 'Lunedì');
+  $('titolo').textContent = SV().nome;
+  $('nav-titolo').textContent = SV().nome;
   $('sottotitolo').textContent = S.admin
     ? 'Area staff: vedi i nomi e gestisci le date.'
     : 'Prenota il tuo orario in pochi secondi.';
@@ -1132,7 +1204,7 @@ function intestazioneHome() {
 }
 
 function intestazioneGiorno(data, sotto) {
-  $('sopratitolo').textContent = S.admin ? 'Staff · visita medica' : 'Visita medica';
+  $('sopratitolo').textContent = S.admin ? 'Staff · ' + SV().breve : SV().nome;
   $('titolo').textContent = etichettaData(data);
   $('nav-titolo').textContent = etichettaCorta(data);
   $('sottotitolo').textContent = sotto || 'Carico gli orari…';
@@ -1165,7 +1237,7 @@ function aggiornaAvvio() {
   var turno = ++S.turnoAvvio;
   var bloccante = !S.avvio;
   carico(1, bloccante);
-  return chiama('apiAvvio', conPin()).then(function (r) {
+  return chiama('apiAvvio', conPin({ v: 2 })).then(function (r) {
     if (turno !== S.turnoAvvio) return;
     applicaAvvio(r);
     if (!r.admin) salvaCache(r);
@@ -1187,17 +1259,24 @@ function mostraDate() {
   var app = svuota($('app'));
   var a = S.avvio;
 
-  if (S.admin) app.appendChild(strumentiStaff());
-
   /* Dalla memoria del telefono potrebbero arrivare date nel frattempo passate */
-  var date = a.date.filter(function (d) { return S.admin || d.data >= oggiISO(); });
+  var future = a.date.filter(function (d) { return S.admin || d.data >= oggiISO(); });
+  var date = future.filter(function (d) { return servizioDi(d) === S.servizio; });
+
+  /* Finché la nutrizionista non ha date, gli atleti non vedono la scelta */
+  var conNutri = future.some(function (d) { return servizioDi(d) === 'nutrizionista'; });
+  if (S.admin || conNutri || nutri()) app.appendChild(selettoreServizio());
+
+  if (S.admin) app.appendChild(strumentiStaff());
 
   app.appendChild(el('div', 'sezione', S.admin ? 'Date in calendario' : 'Prossime date'));
 
   if (!date.length) {
     app.appendChild(statoVuoto('calendario',
-      'Nessuna data in programma',
-      S.admin ? 'Aggiungi la prossima visita da “Nuova data di visita”.' : 'Le nuove date compariranno qui. Riprova tra qualche giorno.'));
+      nutri() ? 'Nessuna data con la nutrizionista' : 'Nessuna data in programma',
+      S.admin
+        ? 'Aggiungi la prossima data da “' + SV().nuova + '”.'
+        : 'Le nuove date compariranno qui. Riprova tra qualche giorno.'));
     aggiungiInvitoApp(app);
     return;
   }
@@ -1206,9 +1285,35 @@ function mostraDate() {
   date.forEach(function (d) { g.appendChild(rigaData(d)); });
   app.appendChild(g);
   app.appendChild(el('p', 'nota-sezione', S.admin
-    ? 'L’anello mostra quanta parte della serata è ancora libera.'
+    ? 'L’anello mostra quanta parte della ' + (nutri() ? 'giornata' : 'serata') + ' è ancora libera.'
     : 'Gli altri atleti non vedono il tuo nome: per loro l’orario risulta solo occupato.'));
   aggiungiInvitoApp(app);
+}
+
+/* Visita medica | Nutrizionista. La scelta finisce anche nell’indirizzo,
+   così ricaricando la pagina si resta dove si era. */
+function selettoreServizio() {
+  var box = el('div', 'segmenti servizi');
+  box.setAttribute('role', 'radiogroup');
+  box.setAttribute('aria-label', 'Servizio');
+  Object.keys(SERVIZI).forEach(function (k) {
+    var b = el('button', 'segmento', SERVIZI[k].nome);
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', k === S.servizio ? 'true' : 'false');
+    b.onclick = function () { if (k !== S.servizio) scegliServizio(k); };
+    box.appendChild(b);
+  });
+  return box;
+}
+
+function scegliServizio(k) {
+  S.servizio = k;
+  var q = new URLSearchParams(location.search);
+  if (k === 'medica') q.delete('s'); else q.set('s', k);
+  var qs = q.toString();
+  try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '')); } catch (e) {}
+  if (S.avvio) mostraDate(); else { intestazioneHome(); scheletroDate(); }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1305,6 +1410,8 @@ function rigaData(d) {
   else if (d.passata) sotto = 'Data passata';
   else if (liberi === 0) sotto = 'Al completo';
   else sotto = plurale(liberi, 'orario libero', 'orari liberi') + ' su ' + d.totale;
+  /* La nutrizionista non ha un orario fisso: lo scriviamo su ogni data */
+  if (servizioDi(d) !== 'medica' && d.inizio) sotto = d.inizio + '–' + d.fine + ' · ' + sotto;
   var st = el('span', 'riga-sotto', sotto);
   t.appendChild(st);
 
@@ -1362,7 +1469,7 @@ function strumentiStaff() {
   var f = document.createDocumentFragment();
   f.appendChild(el('div', 'sezione', 'Strumenti'));
   var g = el('div', 'gruppo');
-  g.appendChild(rigaIcona('piu', 'blu', 'Nuova data di visita', foglioNuovaData));
+  g.appendChild(rigaIcona('piu', 'blu', SV().nuova, nutri() ? foglioNuovaDataNutri : foglioNuovaData));
   g.appendChild(rigaIcona('qr', 'grigia', 'Link e QR per gli atleti', foglioQR));
   if (S.avvio.urlFoglio) {
     g.appendChild(rigaIcona('tabella', 'verde', 'Apri il foglio dati', function () {
@@ -1405,6 +1512,7 @@ function mostraErrore(titolo, riprova) {
 
 function scheletroDate() {
   var app = svuota($('app'));
+  if (nutri()) app.appendChild(selettoreServizio());
   app.appendChild(el('div', 'sezione', 'Prossime date'));
   var g = el('div', 'gruppo');
   for (var i = 0; i < 3; i++) {
@@ -1425,7 +1533,7 @@ function scheletroDate() {
    Schermata: orari di una data
    ════════════════════════════════════════════════════════════════════ */
 /* Ultimi orari visti per ogni data, per mostrarli subito mentre si aggiornano */
-function chiaveOrari(data) { return 'orari:' + data; }
+function chiaveOrari(data) { return 'orari:' + S.servizio + ':' + data; }
 function leggiOrari(data) {
   try { var r = JSON.parse(sessionStorage.getItem(chiaveOrari(data))); return r && r.ok ? r : null; } catch (e) { return null; }
 }
@@ -1434,7 +1542,7 @@ function salvaOrari(r) { try { sessionStorage.setItem(chiaveOrari(r.data), JSON.
 function apriGiorno(data, daStoria) {
   S.giorno = data;
   S.slot = null;
-  if (!daStoria) history.pushState({ giorno: data }, '');
+  if (!daStoria) history.pushState({ giorno: data, servizio: S.servizio }, '');
   intestazioneGiorno(data);
   window.scrollTo(0, 0);
   var visti = S.admin ? null : leggiOrari(data);
@@ -1447,7 +1555,7 @@ function caricaGiorno(data) {
   var turno = ++S.turnoGiorno;
   var bloccante = !S.slot;
   carico(1, bloccante);
-  var richiesta = conPin({ data: data });
+  var richiesta = perServizio({ data: data });
   if (!S.admin) richiesta.mie = mieDellaData(data);
   return chiama('apiSlot', richiesta).then(function (r) {
     if (turno !== S.turnoGiorno || S.giorno !== data) return;
@@ -1487,7 +1595,7 @@ function disegnaGiorno(r) {
   var liberi = r.slot.filter(function (s) { return !s.occupato && !s.passato; }).length;
   intestazioneGiorno(r.data, r.chiusa
     ? (r.stato === 'chiusa' ? 'Prenotazioni chiuse' : 'Data passata')
-    : plurale(liberi, 'orario libero', 'orari liberi') + ' su ' + r.slot.length + ' · visite da ' + durata() + ' minuti');
+    : plurale(liberi, 'orario libero', 'orari liberi') + ' su ' + r.slot.length + ' · ' + SV().unita + ' da ' + durata() + ' minuti');
 
   var app = svuota($('app'));
   if (S.admin) { disegnaGiornoStaff(app, r); return; }
@@ -1564,8 +1672,12 @@ function disegnaGiornoStaff(app, r) {
   app.appendChild(el('div', 'sezione', 'Gestione'));
   var g2 = el('div', 'gruppo');
   g2.appendChild(rigaInterruttore(r));
+  if (r.inizio) {
+    g2.appendChild(rigaIcona('orologio', 'arancio', 'Orari', function () { foglioOrariData(r); },
+      r.inizio + '–' + r.fine));
+  }
   g2.appendChild(rigaIcona('lista', 'indaco', 'Elenco del giorno', function () { foglioElenco(r.data); }));
-  g2.appendChild(rigaIcona('documento', 'rossa', 'PDF per il medico', function () { foglioPDF(r.data); }));
+  g2.appendChild(rigaIcona('documento', 'rossa', SV().pdf, function () { foglioPDF(r.data); }));
   app.appendChild(g2);
 
   app.appendChild(el('div', 'sezione', 'Orari'));
@@ -1608,7 +1720,7 @@ function rigaInterruttore(r) {
     var chiudere = !input.checked;
     input.disabled = true;
     carico(1, true);
-    chiama('apiStatoData', conPin({ data: r.data, stato: chiudere ? 'chiusa' : 'aperta' })).then(function (res) {
+    chiama('apiStatoData', perServizio({ data: r.data, stato: chiudere ? 'chiusa' : 'aperta' })).then(function (res) {
       if (!res.ok) throw errUtente(res.errore);
       flash(chiudere ? 'Prenotazioni chiuse' : 'Prenotazioni riaperte', 'ok');
       caricaGiorno(r.data);
@@ -1631,7 +1743,8 @@ function rigaOrarioStaff(r, s) {
     t.appendChild(el('span', 'riga-titolo', (s.nome + ' ' + s.cognome).trim() || 'Occupato'));
     var sotto = el('span', 'riga-sotto');
     sotto.appendChild(puntoSocieta(s.canale));
-    sotto.appendChild(document.createTextNode((CANALI[s.canale] || 'Senza società') + (s.telefono ? ' · ' + s.telefono : '')));
+    sotto.appendChild(document.createTextNode((CANALI[s.canale] || 'Senza società') +
+      (TIPI[s.tipo] ? ' · ' + TIPI[s.tipo] : '') + (s.telefono ? ' · ' + s.telefono : '')));
     t.appendChild(sotto);
     b.onclick = function () { foglioPersona(r, s); };
   } else {
@@ -1728,10 +1841,35 @@ function foglioPrenota(r, s) {
      il server riconosce la stessa richiesta e non crea doppioni. */
   var codice = nuovoCodice();
   var canale = CANALI[S.canale] ? S.canale : '';
+  var tipo = '';
 
   apriFoglio(function (f) {
     testaFoglio(f, S.admin ? 'Inserisci prenotazione' : 'Prenota');
-    riepilogo(f, s.ora, r.data, durata() + ' minuti');
+    riepilogo(f, s.ora, r.data, (nutri() ? 'nutrizionista · ' : '') + durata() + ' minuti');
+
+    /* Per la nutrizionista: primo appuntamento o controllo? Nessuna scelta già fatta */
+    var sceltaTipo = null;
+    if (nutri()) {
+      f.appendChild(el('div', 'sezione', 'Appuntamento'));
+      sceltaTipo = el('div', 'segmenti');
+      sceltaTipo.setAttribute('role', 'radiogroup');
+      sceltaTipo.setAttribute('aria-label', 'Tipo di appuntamento');
+      var bottoniTipo = {};
+      Object.keys(TIPI).forEach(function (k) {
+        var b = el('button', 'segmento', TIPI[k]);
+        b.type = 'button';
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', 'false');
+        b.onclick = function () {
+          tipo = k;
+          Object.keys(bottoniTipo).forEach(function (j) { bottoniTipo[j].setAttribute('aria-checked', j === k ? 'true' : 'false'); });
+          errore.nascondi();
+        };
+        bottoniTipo[k] = b;
+        sceltaTipo.appendChild(b);
+      });
+      f.appendChild(sceltaTipo);
+    }
 
     f.appendChild(el('div', 'sezione', 'Sono un atleta di'));
     var scelta = el('div', 'scelta');
@@ -1779,9 +1917,10 @@ function foglioPrenota(r, s) {
     function invia() {
       errore.nascondi();
       var dati = {
-        data: r.data, ora: s.ora, canale: canale, codice: codice,
+        data: r.data, ora: s.ora, canale: canale, codice: codice, servizio: S.servizio, tipo: tipo,
         nome: iNome.value.trim(), cognome: iCognome.value.trim(), telefono: iTel.value.trim()
       };
+      if (sceltaTipo && !tipo) { errore.mostra('Indica se è la prima visita o un controllo.'); sceltaTipo.classList.add('scuoti'); setTimeout(function () { sceltaTipo.classList.remove('scuoti'); }, 450); return; }
       if (!canale) { errore.mostra('Scegli la tua società.'); scelta.classList.add('scuoti'); setTimeout(function () { scelta.classList.remove('scuoti'); }, 450); return; }
       if (!dati.nome || !dati.cognome) { errore.mostra('Servono nome e cognome.'); (dati.nome ? iCognome : iNome).focus(); return; }
       if (dati.telefono.replace(/\D/g, '').length < 8) { errore.mostra('Inserisci un numero di telefono valido.'); iTel.focus(); return; }
@@ -1821,7 +1960,7 @@ function foglioConfermato(r, s, codice) {
     var e = el('div', 'esito');
     e.appendChild(icona('spunta', 'cerchio'));
     e.appendChild(el('h2', null, 'Sei prenotato'));
-    e.appendChild(el('p', null, etichettaData(r.data) + ' alle ' + s.ora));
+    e.appendChild(el('p', null, etichettaData(r.data) + ' alle ' + s.ora + (nutri() ? ' · nutrizionista' : '')));
     f.appendChild(e);
 
     f.appendChild(el('div', 'codice', codice));
@@ -1861,15 +2000,15 @@ function scaricaCalendario(data, ora, codice) {
     'DTSTAMP:' + adesso,
     'DTSTART:' + giorno + 'T' + hhmm(inizio),
     'DTEND:' + giorno + 'T' + hhmm(fine),
-    'SUMMARY:Visita medica sportiva',
+    'SUMMARY:' + SV().evento,
     'DESCRIPTION:Codice prenotazione: ' + codice,
-    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Domani visita medica sportiva', 'TRIGGER:-P1D', 'END:VALARM',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Domani ' + SV().evento.toLowerCase(), 'TRIGGER:-P1D', 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR'
   ].join('\r\n');
   var url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
   var a = el('a');
   a.href = url;
-  a.download = 'visita-medica-' + data + '.ics';
+  a.download = SV().file + '-' + data + '.ics';
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1916,7 +2055,7 @@ function foglioConfermaAnnullo(r, s, codice) {
     si.onclick = function () {
       errore.nascondi();
       occupa(si, true, 'Annullo…');
-      attendi(chiama('apiAnnulla', { data: r.data, ora: s.ora, codice: codice })).then(function (res) {
+      attendi(chiama('apiAnnulla', { data: r.data, ora: s.ora, codice: codice, servizio: S.servizio })).then(function (res) {
         if (!res.ok) throw errUtente(res.errore);
         scordaMia(r.data, s.ora);
         chiudiFoglio();
@@ -1943,7 +2082,8 @@ function foglioPersona(r, s) {
       c.appendChild(document.createTextNode(CANALI[s.canale]));
       p.appendChild(c);
     }
-    p.appendChild(el('p', null, etichettaData(r.data) + ' alle ' + s.ora + (s.codice ? ' · codice ' + s.codice : '')));
+    p.appendChild(el('p', null, etichettaData(r.data) + ' alle ' + s.ora +
+      (TIPI[s.tipo] ? ' · ' + TIPI[s.tipo].toLowerCase() : '') + (s.codice ? ' · codice ' + s.codice : '')));
     f.appendChild(p);
 
     var g = el('div', 'gruppo');
@@ -1994,7 +2134,7 @@ function foglioEliminaPrenotazione(r, s) {
     si.onclick = function () {
       errore.nascondi();
       occupa(si, true, 'Elimino…');
-      attendi(chiama('apiAnnulla', conPin({ data: r.data, ora: s.ora }))).then(function (res) {
+      attendi(chiama('apiAnnulla', perServizio({ data: r.data, ora: s.ora }))).then(function (res) {
         if (!res.ok) throw errUtente(res.errore);
         chiudiFoglio();
         flash('Prenotazione eliminata', 'ok');
@@ -2021,7 +2161,7 @@ function foglioSposta(r, s) {
     var cData = el('label', 'campo');
     cData.appendChild(el('span', null, 'Data'));
     var selData = el('select');
-    (S.avvio.date || []).forEach(function (d) {
+    (S.avvio.date || []).filter(function (d) { return servizioDi(d) === S.servizio; }).forEach(function (d) {
       var o = el('option', null, etichettaCorta(d.data) + (d.stato === 'chiusa' ? ' (chiusa)' : ''));
       o.value = d.data;
       if (d.data === r.data) o.selected = true;
@@ -2053,7 +2193,7 @@ function foglioSposta(r, s) {
       selOra.disabled = true;
       bott.disabled = true;
       nota.textContent = 'Cerco gli orari liberi…';
-      attendi(chiama('apiSlot', conPin({ data: selData.value }))).then(function (res) {
+      attendi(chiama('apiSlot', perServizio({ data: selData.value }))).then(function (res) {
         if (mio !== turno) return;
         if (!res.ok) throw errUtente(res.errore);
         var liberi = res.slot.filter(function (o) {
@@ -2079,7 +2219,7 @@ function foglioSposta(r, s) {
     bott.onclick = function () {
       errore.nascondi();
       occupa(bott, true, 'Sposto…');
-      attendi(chiama('apiSposta', conPin({
+      attendi(chiama('apiSposta', perServizio({
         data: r.data, ora: s.ora, codice: s.codice,
         nuovaData: selData.value, nuovaOra: selOra.value
       }))).then(function (res) {
@@ -2114,19 +2254,19 @@ function foglioElenco(data) {
     var bPdf = el('button', 'btn secondario');
     bPdf.type = 'button';
     bPdf.appendChild(icona('documento', 'ico'));
-    bPdf.appendChild(document.createTextNode('PDF per il medico'));
+    bPdf.appendChild(document.createTextNode(SV().pdf));
     bPdf.onclick = function () { foglioPDF(data); };
     pilaPdf.appendChild(bPdf);
     f.appendChild(pilaPdf);
 
-    attendi(chiama('apiElenco', conPin({ data: data }))).then(function (res) {
+    attendi(chiama('apiElenco', perServizio({ data: data }))).then(function (res) {
       if (!res.ok) throw errUtente(res.errore);
       svuota(zona);
       if (!res.righe.length) {
         zona.appendChild(statoVuoto('lista', 'Nessuna prenotazione', 'Per questa data non ha ancora prenotato nessuno.'));
         return;
       }
-      var testo = ['Visita medica sportiva · ' + maiuscola(etichettaData(data)), ''];
+      var testo = [SV().titolo + ' · ' + maiuscola(etichettaData(data)), ''];
       Object.keys(CANALI).concat(['']).forEach(function (k) {
         var gruppo = res.righe.filter(function (p) { return k ? p.canale === k : !CANALI[p.canale]; });
         if (!gruppo.length) return;
@@ -2140,10 +2280,11 @@ function foglioElenco(data) {
           riga.appendChild(el('span', 'riga-ora', p.ora));
           var t = el('span', 'riga-testo');
           t.appendChild(el('span', 'riga-titolo', (p.nome + ' ' + p.cognome).trim()));
-          if (p.telefono) t.appendChild(el('span', 'riga-sotto', p.telefono));
+          var dettagli = [TIPI[p.tipo], p.telefono].filter(Boolean);
+          if (dettagli.length) t.appendChild(el('span', 'riga-sotto', dettagli.join(' · ')));
           riga.appendChild(t);
           g.appendChild(riga);
-          testo.push(p.ora + '  ' + (p.nome + ' ' + p.cognome).trim() + (p.telefono ? '  ' + p.telefono : ''));
+          testo.push(p.ora + '  ' + (p.nome + ' ' + p.cognome).trim() + (TIPI[p.tipo] ? '  (' + TIPI[p.tipo].toLowerCase() + ')' : '') + (p.telefono ? '  ' + p.telefono : ''));
         });
         zona.appendChild(g);
         testo.push('');
@@ -2205,7 +2346,7 @@ function foglioNuovaData() {
       if (!input.value) { errore.mostra('Scegli una data.'); return; }
       aggiungi.disabled = true;
       aggiungi.textContent = 'Aggiungo…';
-      attendi(chiama('apiNuovaData', conPin({ data: input.value }))).then(function (res) {
+      attendi(chiama('apiNuovaData', perServizio({ data: input.value }))).then(function (res) {
         if (!res.ok) throw errUtente(res.errore);
         chiudiFoglio();
         flash(res.esistente ? 'Questa data c’era già' : 'Data aggiunta', 'ok');
@@ -2213,6 +2354,138 @@ function foglioNuovaData() {
       }).catch(function (e) {
         aggiungi.disabled = false;
         aggiungi.textContent = 'Aggiungi';
+        errore.mostra(testoErrore(e));
+      });
+    };
+  });
+}
+
+/* Inizio, fine e durata di una giornata, con l’anteprima degli orari che ne escono */
+var DURATE = [15, 20, 30, 40, 45, 60, 90];
+
+function campiOrari(f, valori) {
+  var g = el('div', 'gruppo');
+  var iInizio = campo(g, 'Inizio', 'time');
+  var iFine = campo(g, 'Fine', 'time');
+  iInizio.step = iFine.step = 300;
+  iInizio.value = valori.inizio || '';
+  iFine.value = valori.fine || '';
+
+  var cDurata = el('label', 'campo');
+  cDurata.appendChild(el('span', null, 'Durata'));
+  var selDurata = el('select');
+  var durate = DURATE.slice();
+  if (valori.durata && durate.indexOf(+valori.durata) < 0) durate.push(+valori.durata);
+  durate.sort(function (a, b) { return a - b; }).forEach(function (m) {
+    var o = el('option', null, m + ' minuti');
+    o.value = String(m);
+    if (m === +valori.durata) o.selected = true;
+    selDurata.appendChild(o);
+  });
+  cDurata.appendChild(selDurata);
+  g.appendChild(cDurata);
+  f.appendChild(g);
+
+  var nota = el('p', 'nota-sezione', '');
+  f.appendChild(nota);
+
+  function leggiValori() { return { inizio: iInizio.value, fine: iFine.value, durata: +selDurata.value }; }
+  function anteprima() {
+    var lista = slotDi(leggiValori());
+    if (!lista.length) { nota.textContent = 'Con questi orari non c’entra nessun appuntamento.'; return; }
+    nota.textContent = plurale(lista.length, 'appuntamento', 'appuntamenti') + ': ' +
+      (lista.length > 4 ? lista.slice(0, 3).join(', ') + ' … ' + lista[lista.length - 1] : lista.join(', ')) + '.';
+  }
+  [iInizio, iFine, selDurata].forEach(function (i) { i.addEventListener('input', anteprima); i.addEventListener('change', anteprima); });
+  anteprima();
+  return { valori: leggiValori, nota: nota };
+}
+
+function piuGiorni(iso, n) {
+  var d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + due(d.getMonth() + 1) + '-' + due(d.getDate());
+}
+
+/* Nuova giornata della nutrizionista: data e orari li sceglie lo staff.
+   Si propongono gli orari e il giorno della settimana dell’ultima giornata. */
+function foglioNuovaDataNutri() {
+  var sue = (S.avvio.date || []).filter(function (d) { return servizioDi(d) === 'nutrizionista'; });
+  var ultima = sue[sue.length - 1];
+  var base = ultima || S.avvio.orariNutri || { inizio: '15:00', fine: '19:00', durata: 30 };
+  var proposta = '';
+  if (ultima) {
+    proposta = piuGiorni(ultima.data, 7);
+    while (proposta < oggiISO()) proposta = piuGiorni(proposta, 7);
+  }
+
+  apriFoglio(function (f) {
+    var aggiungi = el('button', 'link', 'Aggiungi');
+    aggiungi.type = 'button';
+    testaFoglio(f, 'Nuova data', 'Annulla', aggiungi);
+
+    f.appendChild(el('div', 'sezione', 'Giorno'));
+    var g = el('div', 'gruppo');
+    var input = campo(g, 'Data', 'date');
+    input.min = oggiISO();
+    input.value = proposta;
+    f.appendChild(g);
+
+    f.appendChild(el('div', 'sezione', 'Orari della nutrizionista'));
+    var orari = campiOrari(f, base);
+
+    var errore = erroreInline(f);
+    aggiungi.onclick = function () {
+      errore.nascondi();
+      var v = orari.valori();
+      if (!input.value) { errore.mostra('Scegli una data.'); return; }
+      if (!slotDi(v).length) { errore.mostra('Controlla gli orari: tra inizio e fine non c’entra nessun appuntamento.'); return; }
+      aggiungi.disabled = true;
+      aggiungi.textContent = 'Aggiungo…';
+      attendi(chiama('apiNuovaData', perServizio({ data: input.value, inizio: v.inizio, fine: v.fine, durata: v.durata }))).then(function (res) {
+        if (!res.ok) throw errUtente(res.errore);
+        chiudiFoglio();
+        flash(res.esistente ? 'Questa data c’era già' : 'Data aggiunta', 'ok');
+        aggiornaAvvio();
+      }).catch(function (e) {
+        aggiungi.disabled = false;
+        aggiungi.textContent = 'Aggiungi';
+        errore.mostra(testoErrore(e));
+      });
+    };
+  });
+}
+
+/* Cambia gli orari di una giornata già aperta. Il server rifiuta se qualcuno
+   che ha già prenotato resterebbe fuori. */
+function foglioOrariData(r) {
+  apriFoglio(function (f) {
+    var salva = el('button', 'link', 'Salva');
+    salva.type = 'button';
+    testaFoglio(f, 'Orari', 'Annulla', salva);
+    var sotto = el('p', 'nota-sezione centrata', maiuscola(etichettaData(r.data)));
+    sotto.style.marginTop = '0';
+    f.appendChild(sotto);
+
+    f.appendChild(el('div', 'sezione', 'Orari della giornata'));
+    var orari = campiOrari(f, { inizio: r.inizio, fine: r.fine, durata: r.durata });
+    f.appendChild(el('p', 'nota-sezione', 'Chi ha già prenotato tiene il suo orario: se con i nuovi orari resterebbe fuori, spostalo prima.'));
+
+    var errore = erroreInline(f);
+    salva.onclick = function () {
+      errore.nascondi();
+      var v = orari.valori();
+      if (!slotDi(v).length) { errore.mostra('Controlla gli orari: tra inizio e fine non c’entra nessun appuntamento.'); return; }
+      salva.disabled = true;
+      salva.textContent = 'Salvo…';
+      attendi(chiama('apiOrariData', perServizio({ data: r.data, inizio: v.inizio, fine: v.fine, durata: v.durata }))).then(function (res) {
+        if (!res.ok) throw errUtente(res.errore);
+        chiudiFoglio();
+        flash('Orari aggiornati', 'ok');
+        caricaGiorno(r.data);
+      }).catch(function (e) {
+        salva.disabled = false;
+        salva.textContent = 'Salva';
         errore.mostra(testoErrore(e));
       });
     };
@@ -2243,7 +2516,7 @@ function foglioEliminaData(r) {
     si.onclick = function () {
       errore.nascondi();
       occupa(si, true, 'Elimino…');
-      attendi(chiama('apiEliminaData', conPin({ data: r.data }))).then(function (res) {
+      attendi(chiama('apiEliminaData', perServizio({ data: r.data }))).then(function (res) {
         if (!res.ok) throw errUtente(res.errore);
         chiudiFoglio();
         flash('Data eliminata', 'ok');
@@ -2335,10 +2608,12 @@ function creaPDF(r, avvio) {
     var doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
     var M = 16, L = 210 - 2 * M, y = M;
     var dataLunga = new Date(r.data + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var sv = SERVIZI[r.servizio] || SERVIZI.medica;
+    var conTipo = r.servizio === 'nutrizionista';
     /* Titolo del documento: è quello che il visualizzatore mostra al posto di un codice */
     doc.setProperties({
-      title: perPDF('Visita medica sportiva - ' + maiuscola(dataLunga)),
-      subject: 'Prenotazioni della visita medica sportiva',
+      title: perPDF(sv.titolo + ' - ' + maiuscola(dataLunga)),
+      subject: perPDF('Prenotazioni - ' + sv.titolo),
       author: 'ASD Power Gym Passignano',
       creator: 'Prenotazioni visite mediche'
     });
@@ -2356,13 +2631,14 @@ function creaPDF(r, avvio) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.setTextColor(0);
-    doc.text('Visita medica sportiva', M, y + 5);
+    doc.text(perPDF(sv.titolo), M, y + 5);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(13);
     doc.text(perPDF(maiuscola(dataLunga)), M, y + 12);
     doc.setFontSize(9.5);
     doc.setTextColor(110);
-    doc.text(perPDF('Dalle ' + avvio.oraInizio + ' alle ' + avvio.oraFine + '  ·  visite da ' + (avvio.durata || 15) + ' minuti'), M, y + 17.5);
+    doc.text(perPDF('Dalle ' + (r.inizio || avvio.oraInizio) + ' alle ' + (r.fine || avvio.oraFine) +
+      '  ·  ' + sv.unita + ' da ' + (r.durata || avvio.durata || 15) + ' minuti'), M, y + 17.5);
     y += 24;
     doc.setDrawColor(215);
     doc.setLineWidth(0.3);
@@ -2381,56 +2657,68 @@ function creaPDF(r, avvio) {
     y += 6;
 
     /* Tabella */
-    var col = [
-      { t: 'Ora', w: 16 }, { t: 'Cognome e nome', w: 52 }, { t: 'Società', w: 36 },
-      { t: 'Telefono', w: 30 }, { t: 'Presente', w: 18 }, { t: 'Note', w: 26 }
+    var col = conTipo ? [
+      { k: 'ora', t: 'Ora', w: 15 }, { k: 'nome', t: 'Cognome e nome', w: 41 }, { k: 'soc', t: 'Società', w: 38 },
+      { k: 'tel', t: 'Telefono', w: 26 }, { k: 'tipo', t: 'Tipo', w: 22 }, { k: 'pres', t: 'Presente', w: 19 }, { k: 'note', t: 'Note', w: 17 }
+    ] : [
+      { k: 'ora', t: 'Ora', w: 16 }, { k: 'nome', t: 'Cognome e nome', w: 52 }, { k: 'soc', t: 'Società', w: 36 },
+      { k: 'tel', t: 'Telefono', w: 30 }, { k: 'pres', t: 'Presente', w: 18 }, { k: 'note', t: 'Note', w: 26 }
     ];
+    /* Posizione e larghezza di ogni colonna, per nome */
+    var C = {}, xc = M;
+    col.forEach(function (c) { C[c.k] = { x: xc, w: c.w }; xc += c.w; });
     var hTesta = 8, hRiga = 11.5, x;
-    doc.setFillColor(242, 242, 247);
-    doc.rect(M, y, L, hTesta, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(95);
-    x = M;
-    col.forEach(function (c) { doc.text(perPDF(c.t.toUpperCase()), x + 2.5, y + 5.3); x += c.w; });
-    y += hTesta;
+    function testaTabella() {
+      doc.setFillColor(242, 242, 247);
+      doc.rect(M, y, L, hTesta, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(95);
+      x = M;
+      col.forEach(function (c) { doc.text(perPDF(c.t.toUpperCase()), x + 2.5, y + 5.3); x += c.w; });
+      y += hTesta;
+    }
+    testaTabella();
 
     r.slot.forEach(function (s, i) {
+      /* Giornate lunghe (la nutrizionista può ricevere tutto il giorno): si va a pagina nuova */
+      if (y + hRiga > 297 - 24) { doc.addPage(); y = M; testaTabella(); }
       if (i % 2 === 1) { doc.setFillColor(250, 250, 252); doc.rect(M, y, L, hRiga, 'F'); }
       var yt = y + hRiga / 2 + 1.4;
-      x = M;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(s.occupato ? 0 : 165);
-      doc.text(s.ora, x + 2.5, yt);
-      x += col[0].w;
+      doc.text(s.ora, C.ora.x + 2.5, yt);
       if (s.occupato) {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0);
         var nomeCompleto = perPDF(((s.cognome || '') + ' ' + (s.nome || '')).trim() || 'Senza nome');
-        rimpicciolisci(doc, nomeCompleto, col[1].w - 4, 11, 9);
-        doc.text(taglia(doc, nomeCompleto, col[1].w - 4), x + 2.5, yt);
-        x += col[1].w;
+        rimpicciolisci(doc, nomeCompleto, C.nome.w - 4, 11, 9);
+        doc.text(taglia(doc, nomeCompleto, C.nome.w - 4), C.nome.x + 2.5, yt);
+        x = C.soc.x;
         var rgb = COLORE_PDF[s.canale] || [160, 160, 160];
         doc.setFillColor(rgb[0], rgb[1], rgb[2]);
         doc.circle(x + 3.6, yt - 1.25, 1.15, 'F');
         doc.setFontSize(9.5);
         doc.setTextColor(60);
-        doc.text(taglia(doc, perPDF(CANALI[s.canale] || '-'), col[2].w - 8), x + 6.8, yt);
-        x += col[2].w;
+        doc.text(taglia(doc, perPDF(CANALI[s.canale] || '-'), C.soc.w - 8), x + 6.8, yt);
         doc.setTextColor(40);
         var tel = perPDF(s.telefono || '');
-        rimpicciolisci(doc, tel, col[3].w - 3, 10, 7.5);
-        doc.text(taglia(doc, tel, col[3].w - 3), x + 2.5, yt);
-        x += col[3].w;
+        rimpicciolisci(doc, tel, C.tel.w - 3, 10, 7.5);
+        doc.text(taglia(doc, tel, C.tel.w - 3), C.tel.x + 2.5, yt);
+        if (C.tipo) {
+          doc.setFontSize(9.5);
+          doc.setTextColor(40);
+          doc.text(taglia(doc, perPDF(TIPI[s.tipo] || '-'), C.tipo.w - 3), C.tipo.x + 2.5, yt);
+        }
         doc.setDrawColor(140);
         doc.setLineWidth(0.35);
-        doc.rect(x + col[4].w / 2 - 2.3, yt - 3.7, 4.6, 4.6);
+        doc.rect(C.pres.x + C.pres.w / 2 - 2.3, yt - 3.7, 4.6, 4.6);
       } else {
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(10);
         doc.setTextColor(175);
-        doc.text('libero', x + 2.5, yt);
+        doc.text('libero', C.nome.x + 2.5, yt);
       }
       doc.setDrawColor(228);
       doc.setLineWidth(0.2);
@@ -2441,11 +2729,16 @@ function creaPDF(r, avvio) {
     /* Piè di pagina */
     var adesso = new Date();
     var generato = adesso.toLocaleDateString('it-IT') + ' alle ' + due(adesso.getHours()) + ':' + due(adesso.getMinutes());
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(120);
-    doc.text('Documento riservato: contiene dati personali degli atleti. Da consegnare solo al medico.', M, 297 - 17);
-    doc.text(perPDF('ASD Power Gym Passignano · TrasimenoFlippers   -   Generato il ' + generato), M, 297 - 12);
+    var pagine = doc.getNumberOfPages();
+    for (var n = 1; n <= pagine; n++) {
+      doc.setPage(n);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(120);
+      doc.text('Documento riservato: contiene dati personali degli atleti. Da consegnare solo ' + sv.destinatario + '.', M, 297 - 17);
+      doc.text(perPDF('ASD Power Gym Passignano · TrasimenoFlippers   -   Generato il ' + generato), M, 297 - 12);
+      if (pagine > 1) doc.text('Pagina ' + n + ' di ' + pagine, 210 - M, 297 - 12, { align: 'right' });
+    }
     return doc.output('blob');
   });
 }
@@ -2460,7 +2753,7 @@ function bottoneIcona(ic, testo, classe) {
 
 function foglioPDF(data) {
   apriFoglio(function (f) {
-    testaFoglio(f, 'PDF per il medico', 'Chiudi');
+    testaFoglio(f, SV().pdf, 'Chiudi');
     var e = el('div', 'esito');
     var c = icona('documento', 'cerchio');
     c.style.background = '#FF3B30';
@@ -2477,14 +2770,14 @@ function foglioPDF(data) {
     att.appendChild(el('span', 'rotella'));
     pila.appendChild(att);
     f.appendChild(pila);
-    f.appendChild(el('p', 'nota-sezione centrata', 'Contiene nomi e telefoni degli atleti: invialo solo al medico.'));
+    f.appendChild(el('p', 'nota-sezione centrata', 'Contiene nomi e telefoni degli atleti: invialo solo ' + SV().destinatario + '.'));
 
     function prepara() {
       svuota(pila);
       pila.appendChild(att);
       stato.textContent = 'Preparo il PDF con le prenotazioni aggiornate…';
       /* I dati si rileggono adesso: il PDF è sempre aggiornato all'ultimo minuto */
-      Promise.all([attendi(chiama('apiSlot', conPin({ data: data }))), caricaJsPDF()])
+      Promise.all([attendi(chiama('apiSlot', perServizio({ data: data }))), caricaJsPDF()])
         .then(function (ris) {
           var r = ris[0];
           if (!r.ok) throw errUtente(r.errore);
@@ -2495,7 +2788,7 @@ function foglioPDF(data) {
           var prenotati = x.r.slot.filter(function (s) { return s.occupato; }).length;
           stato.textContent = plurale(prenotati, 'prenotazione', 'prenotazioni') + ' su ' + x.r.slot.length + '. Il PDF è pronto.';
           svuota(pila);
-          var nome = 'visita-medica-' + data + '.pdf';
+          var nome = SV().file + '-' + data + '.pdf';
           var url = URL.createObjectURL(x.blob);
           var file = null;
           try { file = new File([x.blob], nome, { type: 'application/pdf' }); } catch (err) {}
@@ -2506,8 +2799,8 @@ function foglioPDF(data) {
             invia.onclick = function () {
               navigator.share({
                 files: [file],
-                title: 'Visita medica ' + etichettaData(data),
-                text: 'Elenco delle prenotazioni per la visita medica sportiva di ' + etichettaData(data) + '.'
+                title: SV().nome + ' ' + etichettaData(data),
+                text: 'Elenco delle prenotazioni ' + (nutri() ? 'con la nutrizionista' : 'per la visita medica sportiva') + ' di ' + etichettaData(data) + '.'
               }).catch(function () {});
             };
             pila.appendChild(invia);
@@ -2558,10 +2851,16 @@ function caricaQR() {
 function foglioQR() {
   apriFoglio(function (f) {
     testaFoglio(f, 'Link e QR', 'Chiudi');
-    f.appendChild(el('p', 'nota-sezione', 'Il primo basta per tutti: la società la sceglie l’atleta quando prenota. Gli altri due la preselezionano, utili per locandine separate.'));
+    f.appendChild(el('p', 'nota-sezione', (nutri()
+      ? 'Questi link aprono direttamente le date della nutrizionista. '
+      : 'Questi link aprono le date della visita medica. ') +
+      'Il primo basta per tutti: la società la sceglie l’atleta quando prenota. Gli altri due la preselezionano, utili per locandine separate.'));
 
-    var voci = [{ chiave: '', nome: 'Per tutti', url: PAGINA }];
-    Object.keys(CANALI).forEach(function (k) { voci.push({ chiave: k, nome: CANALI[k], url: PAGINA + '?c=' + k }); });
+    /* Per la nutrizionista il link porta con sé ?s=nutrizionista */
+    var base = PAGINA + (nutri() ? '?s=' + S.servizio : '');
+    var unisci = nutri() ? '&' : '?';
+    var voci = [{ chiave: '', nome: 'Per tutti', url: base }];
+    Object.keys(CANALI).forEach(function (k) { voci.push({ chiave: k, nome: CANALI[k], url: base + unisci + 'c=' + k }); });
 
     voci.forEach(function (v) {
       var box = el('div', 'qr');
@@ -2589,7 +2888,10 @@ function foglioQR() {
         cond.appendChild(icona('condividi', 'ico'));
         cond.appendChild(document.createTextNode('Condividi'));
         cond.onclick = function () {
-          navigator.share({ title: 'Prenota la visita medica', text: 'Prenota qui il tuo orario per la visita medica sportiva:', url: v.url }).catch(function () {});
+          navigator.share(nutri()
+            ? { title: 'Prenota la nutrizionista', text: 'Prenota qui il tuo appuntamento con la nutrizionista:', url: v.url }
+            : { title: 'Prenota la visita medica', text: 'Prenota qui il tuo orario per la visita medica sportiva:', url: v.url }
+          ).catch(function () {});
         };
         azioni.appendChild(cond);
       }
@@ -2632,7 +2934,7 @@ function foglioPin() {
       errore.nascondi();
       entra.disabled = true;
       entra.textContent = 'Verifico…';
-      attendi(chiama('apiAvvio', { pin: pin })).then(function (r) {
+      attendi(chiama('apiAvvio', { pin: pin, v: 2 })).then(function (r) {
         if (!r.admin) {
           entra.disabled = false;
           entra.textContent = 'Entra';
